@@ -3,11 +3,18 @@ from django.http import HttpResponse
 from datetime import date
 from chatbot.models import Terme,Relation
 import re
+import random
+
 
 NON_FORT = -10
 NON_FAIBLE = -2
 SAIS_PAS = 5
 OUI_FAIBLE = 30
+LIST_OUI_FORT = ["certainement","sûrement","absolument"]
+LIST_OUI_FAIBLE = ["en majorité","globalement","probablement","dans beaucoup de cas"]
+LIST_SAIS_PAS = ["peut-être","Pas toujours","eventuellement","pas forcément"]
+LIST_NON_FORT = ["absolument pas","impossible","pas du tout"]
+LIST_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne crois pas"]
 
 
 
@@ -50,15 +57,15 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 		if (termeU1 == rel.terme1.terme and termeU2 == rel.terme2.terme ):
 			find = True
 			if (rel.poids < NON_FORT):
-				return "absolument pas"
+				return random.choice(LIST_NON_FORT)
 			elif(rel.poids < NON_FAIBLE):
-				return "plutot non"
+				return random.choice(LIST_NON_FAIBLE)
 			elif(rel.poids < SAIS_PAS) :
-				return "Je ne sais pas"
+				random.choice(LIST_SAIS_PAS)
 			elif(rel.poids < OUI_FAIBLE) :
-				return"globalement"
+				return "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
 			else :
-				return "oui absolument"
+				return "{} oui.".format(random.choice(LIST_OUI_FORT))
 	if(find == False) :
 		for rel in listRelations :
 			if(termeU1 == rel.terme1.terme and relation_recherchee == rel.relation) :
@@ -67,24 +74,24 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 					if(rel.terme2.terme == rel2.terme1.terme and relation_recherchee == rel2.relation and termeU2 == rel2.terme2.terme) :
 						p2 = rel2.poids
 						if(p1 >= OUI_FAIBLE and p2 >= OUI_FAIBLE) :
-							return "sûrement"
+							return "{} oui.".format(random.choice(LIST_OUI_FORT))
 							poids = OUI_FAIBLE
 							find = True
 						elif((p1 < OUI_FAIBLE and p2 >= OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < OUI_FAIBLE)) :
 							if((p1 >= SAIS_PAS and p2 >= OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= SAIS_PAS)) :
-								return "probablement"
+								return "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
 								poids = SAIS_PAS
 								find = True
 							elif((p1 >= NON_FAIBLE and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FAIBLE)) :
-								return "Aucune idée"
+								random.choice(LIST_SAIS_PAS)
 								poids = 0
 								find = True
 							elif((p1 >= NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FORT)) :
-								return "j'en doute"
+								return random.choice(LIST_NON_FAIBLE)
 								poids = -3
 								find = True
 							elif((p1 < NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < NON_FORT)) :
-								return "Impossible"
+								return random.choice(LIST_NON_FORT)
 								poids = -11
 								find = True
 		if(find) :
@@ -98,11 +105,11 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 					if len(relation) > 0:
 						for r in relation :
 							if(r.poids >= OUI_FAIBLE) :
-								return "obligé"
+								return "{} oui.".format(random.choice(LIST_OUI_FORT))
 							elif(r.poids >= SAIS_PAS) :
-								return "plutot oui"
+								return "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
 							else :
-								return "je ne sais pas"
+								return random.choice(LIST_SAIS_PAS)
 					else :
 						return "je ne sais pas"
 				return "has_part"
@@ -116,15 +123,15 @@ def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 		if (termeU1 == rel.terme1.terme and termeU2 == rel.terme2.terme ):
 			find = True
 			if (rel.poids < NON_FORT):
-				return "absolument pas"
+				return random.choice(LIST_NON_FORT)
 			elif(rel.poids < NON_FAIBLE):
-				return "plutot non"
+				return random.choice(LIST_NON_FAIBLE)
 			elif(rel.poids < SAIS_PAS) :
-				return "Je ne sais pas"
+				return random.choice(LIST_SAIS_PAS)
 			elif(rel.poids < OUI_FAIBLE) :
-				return"globalement"
+				return "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
 			else :
-				return "oui absolument"
+				return "{} oui.".format(random.choice(LIST_OUI_FORT))
 	if(find == False) :
 		for rel in listRelations :
 			if(termeU1 == rel.terme1.terme and relation_recherchee == rel.relation) :

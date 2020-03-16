@@ -16,3 +16,9 @@ class Relation(models.Model):
 	class Meta:
 		unique_together = (('terme1', 'relation', 'terme2'),)
 		
+
+class RelationAVerifier(models.Model):
+	terme1 = models.ForeignKey(Terme, related_name='ter1', on_delete = models.CASCADE)
+	relation = models.CharField( max_length = 100)
+	terme2 = models.ForeignKey(Terme, related_name='ter2', on_delete = models.CASCADE)
+	poids = models.IntegerField()

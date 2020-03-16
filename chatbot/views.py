@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from datetime import date
-from chatbot.models import Terme,Relation
+from chatbot.models import Terme,Relation,RelationAVerifier
 import re
 import random
 
@@ -74,29 +74,27 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 					if(rel.terme2.terme == rel2.terme1.terme and relation_recherchee == rel2.relation and termeU2 == rel2.terme2.terme) :
 						p2 = rel2.poids
 						if(p1 >= OUI_FAIBLE and p2 >= OUI_FAIBLE) :
-							return "{} oui.".format(random.choice(LIST_OUI_FORT))
-							poids = OUI_FAIBLE
+							reponse = "{} oui.".format(random.choice(LIST_OUI_FORT))
 							find = True
 						elif((p1 < OUI_FAIBLE and p2 >= OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < OUI_FAIBLE)) :
 							if((p1 >= SAIS_PAS and p2 >= OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= SAIS_PAS)) :
-								return "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
-								poids = SAIS_PAS
+								reponse = "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
 								find = True
 							elif((p1 >= NON_FAIBLE and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FAIBLE)) :
 								random.choice(LIST_SAIS_PAS)
 								poids = 0
 								find = True
 							elif((p1 >= NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FORT)) :
-								return random.choice(LIST_NON_FAIBLE)
-								poids = -3
+								reponse = random.choice(LIST_NON_FAIBLE)
 								find = True
 							elif((p1 < NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < NON_FORT)) :
-								return random.choice(LIST_NON_FORT)
-								poids = -11
+								reponse = random.choice(LIST_NON_FORT)
 								find = True
 		if(find) :
-			listRelations.append(r)
-            #print(listRelations)
+			listAverifier = RelationAVerifier.objects.filter(terme1 = termeU1, relation = relation_recherchee, terme2 = termeU2)
+			if(len(listAverifier) == 0) :
+				RelationAVerifier(terme1=Terme.objects.get(terme=termeU1),relation=relation_recherchee,terme2=Terme.objects.get(terme=termeU2),poids=0).save()
+			return reponse
 		else :
 			if(relation_recherchee == "has_part"):
 				list_relation_has_part = Relation.objects.filter(relation = "is_a",terme1 = termeU1)
@@ -105,16 +103,20 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 					if len(relation) > 0:
 						for r in relation :
 							if(r.poids >= OUI_FAIBLE) :
-								return "{} oui.".format(random.choice(LIST_OUI_FORT))
+								reponse = "{} oui.".format(random.choice(LIST_OUI_FORT))
 							elif(r.poids >= SAIS_PAS) :
-								return "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
+								reponse = "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
 							else :
-								return random.choice(LIST_SAIS_PAS)
+								reponse = random.choice(LIST_SAIS_PAS)
 					else :
-						return "je ne sais pas"
-				return "has_part"
+						reponse = "je ne sais pas"
 			else:	
-				return "Je ne sais pas"
+				reponse = "Je ne sais pas"
+			listAverifier = RelationAVerifier.objects.filter(terme1 = termeU1, relation = relation_recherchee, terme2 = termeU2)
+			if(len(listAverifier) == 0) :
+				print(len(listAverifier))
+				RelationAVerifier(terme1=Terme.objects.get(terme=termeU1),relation=relation_recherchee,terme2=Terme.objects.get(terme=termeU2),poids=0).save()
+			return reponse
 
 def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 	find = False
@@ -279,8 +281,8 @@ def traitement_phrase(message):
                 """Question peut etre qualifié(e)
                     """
                 j = i+5
-                if(list[j] == "un" or list[j] == "une") :
-                    j += 1
+            if(list[j] == "un" or list[j] == "une") :
+                j += 1
             relation_recherchee = "has-attribute"        
 
 

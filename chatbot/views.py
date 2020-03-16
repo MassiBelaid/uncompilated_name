@@ -52,44 +52,43 @@ def existTerme(ter) :
 
 def searchRelation(termeU1,relation_recherchee,termeU2) :
 	find = False
-	listRelations = Relation.objects.filter(relation = relation_recherchee)
+	listRelations = Relation.objects.filter(terme1= termeU1, relation = relation_recherchee, terme2 = termeU2)
 	for rel in listRelations :
-		if (termeU1 == rel.terme1.terme and termeU2 == rel.terme2.terme ):
-			find = True
-			if (rel.poids < NON_FORT):
-				return random.choice(LIST_NON_FORT)
-			elif(rel.poids < NON_FAIBLE):
-				return random.choice(LIST_NON_FAIBLE)
-			elif(rel.poids < SAIS_PAS) :
-				random.choice(LIST_SAIS_PAS)
-			elif(rel.poids < OUI_FAIBLE) :
-				return "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
-			else :
-				return "{} oui.".format(random.choice(LIST_OUI_FORT))
+		find = True
+		if (rel.poids < NON_FORT):
+			return random.choice(LIST_NON_FORT)
+		elif(rel.poids < NON_FAIBLE):
+			return random.choice(LIST_NON_FAIBLE)
+		elif(rel.poids < SAIS_PAS) :
+			random.choice(LIST_SAIS_PAS)
+		elif(rel.poids < OUI_FAIBLE) :
+			return "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
+		else :
+			return "{} oui.".format(random.choice(LIST_OUI_FORT))
 	if(find == False) :
+		listRelations = Relation.objects.filter(terme1= termeU1, relation = relation_recherchee)
 		for rel in listRelations :
-			if(termeU1 == rel.terme1.terme and relation_recherchee == rel.relation) :
-				p1 = rel.poids
-				for rel2 in listRelations :
-					if(rel.terme2.terme == rel2.terme1.terme and relation_recherchee == rel2.relation and termeU2 == rel2.terme2.terme) :
-						p2 = rel2.poids
-						if(p1 >= OUI_FAIBLE and p2 >= OUI_FAIBLE) :
-							reponse = "{} oui.".format(random.choice(LIST_OUI_FORT))
-							find = True
-						elif((p1 < OUI_FAIBLE and p2 >= OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < OUI_FAIBLE)) :
-							if((p1 >= SAIS_PAS and p2 >= OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= SAIS_PAS)) :
-								reponse = "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
-								find = True
-							elif((p1 >= NON_FAIBLE and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FAIBLE)) :
-								random.choice(LIST_SAIS_PAS)
-								poids = 0
-								find = True
-							elif((p1 >= NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FORT)) :
-								reponse = random.choice(LIST_NON_FAIBLE)
-								find = True
-							elif((p1 < NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < NON_FORT)) :
-								reponse = random.choice(LIST_NON_FORT)
-								find = True
+			p1 = rel.poids
+			listRelations2 = Relation.objects.filter(terme2= termeU2, relation = relation_recherchee, terme1 = rel.terme2.terme)
+			for rel2 in listRelations2 :
+				p2 = rel2.poids
+				if(p1 >= OUI_FAIBLE and p2 >= OUI_FAIBLE) :
+					reponse = "{} oui.".format(random.choice(LIST_OUI_FORT))
+					find = True
+				elif((p1 < OUI_FAIBLE and p2 >= OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < OUI_FAIBLE)) :
+					if((p1 >= SAIS_PAS and p2 >= OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= SAIS_PAS)) :
+						reponse = "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
+						find = True
+					elif((p1 >= NON_FAIBLE and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FAIBLE)) :
+						random.choice(LIST_SAIS_PAS)
+						poids = 0
+						find = True
+					elif((p1 >= NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FORT)) :
+						reponse = random.choice(LIST_NON_FAIBLE)
+						find = True
+					elif((p1 < NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < NON_FORT)) :
+						reponse = random.choice(LIST_NON_FORT)
+						find = True
 		if(find) :
 			listAverifier = RelationAVerifier.objects.filter(terme1 = termeU1, relation = relation_recherchee, terme2 = termeU2)
 			if(len(listAverifier) == 0) :
@@ -120,58 +119,57 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 
 def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 	find = False
-	listRelations = Relation.objects.filter(relation = relation_recherchee)
+	listRelations = Relation.objects.filter(terme1= termeU1, relation = relation_recherchee, terme2 = termeU2)
 	for rel in listRelations :
-		if (termeU1 == rel.terme1.terme and termeU2 == rel.terme2.terme ):
-			find = True
-			if (rel.poids < NON_FORT):
-				return random.choice(LIST_NON_FORT)
-			elif(rel.poids < NON_FAIBLE):
-				return random.choice(LIST_NON_FAIBLE)
-			elif(rel.poids < SAIS_PAS) :
-				return random.choice(LIST_SAIS_PAS)
-			elif(rel.poids < OUI_FAIBLE) :
-				return "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
-			else :
-				return "{} oui.".format(random.choice(LIST_OUI_FORT))
+		find = True
+		if (rel.poids < NON_FORT):
+			return random.choice(LIST_NON_FORT)
+		elif(rel.poids < NON_FAIBLE):
+			return random.choice(LIST_NON_FAIBLE)
+		elif(rel.poids < SAIS_PAS) :
+			return random.choice(LIST_SAIS_PAS)
+		elif(rel.poids < OUI_FAIBLE) :
+			return "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
+		else :
+			return "{} oui.".format(random.choice(LIST_OUI_FORT))
 	if(find == False) :
+		listRelations = Relation.objects.filter(terme1= termeU1, relation = relation_recherchee)
 		for rel in listRelations :
-			if(termeU1 == rel.terme1.terme and relation_recherchee == rel.relation) :
-				p1 = rel.poids
-				for rel2 in listRelations :
-					if(rel.terme2.terme == rel2.terme1.terme and relation_recherchee == rel2.relation and termeU2 == rel2.terme2.terme) :
-						p2 = rel2.poids
-						if(p1 >= OUI_FAIBLE and p2 >= OUI_FAIBLE) :
-							termeC1 = termeU1
-							termeC2 = rel.terme2.terme
-							termeC3 = termeU2
-							if(relation_recherchee == "is_a") :
-								reponse = "peut être parce que {} est sous-classe de {}, qui est sous-classe de {} ".format(termeC3,termeC2,termeC1)
-							elif(relation_recherchee == "has_part") :
-								reponse = "peut être parce que {} est composé de {}, qui composé de {} ".format(termeC3,termeC2,termeC1)
-							elif(relation_recherchee == "has_attribute") :
-								reponse = "peut être parce que {} peut avoir comme propriété {}, qui peut avoir comme propriété {} ".format(termeC3,termeC2,termeC1)
+			p1 = rel.poids
+			listRelations2 = Relation.objects.filter(terme2= termeU2, relation = relation_recherchee, terme1 = rel.terme2.terme)
+			for rel2 in listRelations2 :
+				p2 = rel2.poids
+				if(p1 >= OUI_FAIBLE and p2 >= OUI_FAIBLE) :
+					termeC1 = termeU1
+					termeC2 = rel.terme2.terme
+					termeC3 = termeU2
+					if(relation_recherchee == "is_a") :
+						reponse = "peut être parce que {} est sous-classe de {}, qui est sous-classe de {} ".format(termeC3,termeC2,termeC1)
+					elif(relation_recherchee == "has_part") :
+						reponse = "peut être parce que {} est composé de {}, qui composé de {} ".format(termeC3,termeC2,termeC1)
+					elif(relation_recherchee == "has_attribute") :
+						reponse = "peut être parce que {} peut avoir comme propriété {}, qui peut avoir comme propriété {} ".format(termeC3,termeC2,termeC1)
 
-							return reponse
-							poids = OUI_FAIBLE
-							find = True
-						elif((p1 < OUI_FAIBLE and p2 >= OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < OUI_FAIBLE)) :
-							if((p1 >= SAIS_PAS and p2 >= OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= SAIS_PAS)) :
-								return "Je ne suis pas certain de cela"
-								poids = SAIS_PAS
-								find = True
-							elif((p1 >= NON_FAIBLE and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FAIBLE)) :
-								return "Aucune idée"
-								poids = 0
-								find = True
-							elif((p1 >= NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FORT)) :
-								return "j'en doute que cela soit le cas"
-								poids = -3
-								find = True
-							elif((p1 < NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < NON_FORT)) :
-								return "Impossible, a mon avis c'est tout le contraire"
-								poids = -11
-								find = True
+					return reponse
+					poids = OUI_FAIBLE
+					find = True
+				elif((p1 < OUI_FAIBLE and p2 >= OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < OUI_FAIBLE)) :
+					if((p1 >= SAIS_PAS and p2 >= OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= SAIS_PAS)) :
+						return "Je ne suis pas certain de cela"
+						poids = SAIS_PAS
+						find = True
+					elif((p1 >= NON_FAIBLE and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FAIBLE)) :
+						return "Aucune idée"
+						poids = 0
+						find = True
+					elif((p1 >= NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FORT)) :
+						return "j'en doute que cela soit le cas"
+						poids = -3
+						find = True
+					elif((p1 < NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < NON_FORT)) :
+						return "Impossible, a mon avis c'est tout le contraire"
+						poids = -11
+						find = True
 		if(find) :
 			listRelations.append(r)
             #print(listRelations)
@@ -380,6 +378,8 @@ def traitement_phrase(message):
                 j = i+5
                 if (list[j]=="un" or list[j]=="une"):
                     j += 1
+                if(list[j][len(list[j])-1] == '?'):
+                	list[j] = list[j][0:len(list[j])-1]
                 (i,j) = (j,i)    
             relation_recherchee = "has_part"
 

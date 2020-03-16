@@ -13,8 +13,6 @@ class Relation(models.Model):
 	terme2 = models.ForeignKey(Terme, related_name='terme2', on_delete = models.CASCADE)
 	poids = models.IntegerField()
 
-	class Meta:
-		unique_together = (('terme1', 'relation', 'terme2'),)
 		
 
 class RelationAVerifier(models.Model):

@@ -43,7 +43,7 @@ def view_date(request, jour, mois, annee=2020):
 
 def existTerme(ter) :
     b = False
-    listTermes = Terme.objects.all()
+    listTermes = Terme.objects.filter(terme = ter)
     for elt in listTermes :
         if(elt.terme == ter) :
             b = True

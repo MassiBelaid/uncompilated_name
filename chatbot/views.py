@@ -10,23 +10,49 @@ NON_FORT = -10
 NON_FAIBLE = -2
 SAIS_PAS = 5
 OUI_FAIBLE = 30
+NOMBRE_VALIDATION_RELATION = 2
+
 LIST_OUI_FORT = ["certainement","sûrement","absolument"]
 LIST_OUI_FAIBLE = ["en majorité","globalement","probablement","dans beaucoup de cas"]
 LIST_SAIS_PAS = ["peut-être","Pas toujours","eventuellement","pas forcément"]
 LIST_NON_FORT = ["absolument pas","impossible","pas du tout"]
 LIST_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne crois pas"]
 
+LIST_REPONSE_OUI_FORT = ["oui certainement","oui sûrement","oui absolument","oui surement","oui"]
+LIST_REPONSE_OUI_FAIBLE = ["oui en majorité","oui globalement","oui probablement","oui dans beaucoup de cas","oui en majorite"]
+LIST_REPONSE_SAIS_PAS = ["peut-être","Pas toujours","eventuellement","pas forcément","pas forcement","peut-etre"]
+LIST_REPONSE_NON_FORT = ["absolument pas","impossible","pas du tout","non"]
+LIST_REPONSE_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne crois pas","plutot pas","peut-etre pas"]
 
 
 def home(request):
 	today = date.today()
 	phrase = request.GET.get('phrase') or ''
-	if(phrase == '') :
-		return render(request,'chatbot/chatbot.html',{'date':today})
-	else :
-		reponse = traitement_phrase(phrase)
-		return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse})
-
+	rav = request.session.get('question')
+	if (rav is not None) :
+		if(phrase == '') :
+			request.session['question'] = None
+			return render(request,'chatbot/chatbot.html',{'date':today})
+		else :
+			reponse = traitement_reponse(rav, phrase)
+			request.session['question'] = None
+			if(type(reponse) == str) :
+				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse})
+			else :
+				request.session['question'] = reponse
+				reponse = construireQuestion (reponse)
+				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse})
+	else :	
+		if(phrase == '') :
+			return render(request,'chatbot/chatbot.html',{'date':today})
+		else :
+			reponse = traitement_phrase(phrase)
+			if(type(reponse) == str) :
+				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse})
+			else :
+				request.session['question'] = reponse
+				reponse = construireQuestion (reponse)
+				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse})
 
 
 def view_date(request, jour, mois, annee=2020):
@@ -117,6 +143,8 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 				RelationAVerifier(terme1=Terme.objects.get(terme=termeU1),relation=relation_recherchee,terme2=Terme.objects.get(terme=termeU2),poids=0).save()
 			return reponse
 
+
+
 def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 	find = False
 	listRelations = Relation.objects.filter(terme1= termeU1, relation = relation_recherchee, terme2 = termeU2)
@@ -197,6 +225,61 @@ def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 				return "Je ne sais pas"
 
     #print("{} {} {} {}".format(r.terme1,r.relation,r.terme2,r.poids))
+
+
+
+
+def construireQuestion(rav) :
+	if(rav[1] == "is_a") :
+		corpMsg = "est sous-classe de"
+	elif(rav[1] == "has_part") :
+		corpMsg = "est composé de"
+	elif(rav[1] == "has_attribute") :
+		corpMsg = "peut avoir comme propriété"
+	return "est-ce que {} {} {} ?".format(rav[0], corpMsg, rav[2])
+
+
+
+def chercherQuestion() :
+	rav = RelationAVerifier.objects.order_by('?').first()
+	return [rav.terme1.terme, rav.relation, rav.terme2.terme]
+
+
+
+def traitement_reponse(rav, reponse) :
+	reponse = reponse.lower()
+	if(reponse in LIST_REPONSE_OUI_FORT):
+		poid = OUI_FAIBLE
+		RelationAVerifier(terme1=Terme.objects.get(terme=rav[0]),relation = rav[1],terme2=Terme.objects.get(terme=rav[2]),poids=poid).save()
+		rep = "T'as repondu oui"
+	elif(reponse in LIST_REPONSE_OUI_FAIBLE) :
+		poid = SAIS_PAS
+		RelationAVerifier(terme1=Terme.objects.get(terme=rav[0]),relation = rav[1],terme2=Terme.objects.get(terme=rav[2]),poids=poid).save()
+		rep = "Tu dis oui faible"
+	elif(reponse in LIST_REPONSE_SAIS_PAS) :
+		poid = NON_FAIBLE
+		RelationAVerifier(terme1=Terme.objects.get(terme=rav[0]),relation = rav[1],terme2=Terme.objects.get(terme=rav[2]),poids=poid).save()
+		rep = "Tu dis que tu ne sais pas"
+	elif(reponse in LIST_REPONSE_NON_FORT) :
+		poid = NON_FORT - 1
+		RelationAVerifier(terme1=Terme.objects.get(terme=rav[0]),relation = rav[1],terme2=Terme.objects.get(terme=rav[2]),poids=poid).save()
+		rep = "Tu dis que c'est non"
+	elif(reponse in LIST_REPONSE_NON_FAIBLE) :
+		poid = NON_FORT
+		RelationAVerifier(terme1=Terme.objects.get(terme=rav[0]),relation = rav[1],terme2=Terme.objects.get(terme=rav[2]),poids=poid).save()
+		rep = "Tu dis non faible"
+	else :
+		return traitement_phrase(reponse)
+
+	listRelationAVerifier = RelationAVerifier.objects.filter(terme1=Terme.objects.get(terme=rav[0]),relation = rav[1],terme2=Terme.objects.get(terme=rav[2]),poids=poid)
+	if(len(listRelationAVerifier) >= NOMBRE_VALIDATION_RELATION):
+		Relation(terme1=Terme.objects.get(terme=rav[0]),relation = rav[1],terme2=Terme.objects.get(terme=rav[2]),poids=poid).save()
+		RelationAVerifier.objects.filter(terme1=rav[0],relation = rav[1],terme2=rav[2]).delete()
+
+	return rep 
+
+
+
 
 def traitement_phrase(message):
     message = message.lower()
@@ -281,7 +364,7 @@ def traitement_phrase(message):
                 j = i+5
             if(list[j] == "un" or list[j] == "une") :
                 j += 1
-            relation_recherchee = "has-attribute"        
+            relation_recherchee = "has_attribute"        
 
 
         else :
@@ -399,7 +482,7 @@ def traitement_phrase(message):
                 j = i+5
                 if(list[j] == "un" or list[j] == "une") :
                     j += 1
-            relation_recherchee = "has-attribute"        
+            relation_recherchee = "has_attribute"        
 
 
         else :
@@ -433,7 +516,8 @@ def traitement_phrase(message):
                 """Le Premier Terme est inconnu
                     """
                 return "Je ne connais pas ce qu'est {}".format(list[i])
-
+    elif ((list[0] == "posez" or list[0] == "pose") and ("question" in list or "questions" in list)):
+    	return chercherQuestion()
     else:
         """Ceci n'est peut etre pas une question
             """

@@ -84,6 +84,10 @@ DATABASES = {
         'PASSWORD': '',        
         'HOST': '127.0.0.1',                    # Utile si votre base de données est sur une autre machine
         'PORT': '3306',                          #... et si elle utilise un autre port que celui par défaut
+        'TEST': {
+            'CHARSET' : 'utf8',
+            'COLLATION':'utf8_general_ci'
+        }
     }
 }
 

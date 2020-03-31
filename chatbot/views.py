@@ -4,6 +4,7 @@ from datetime import date
 from chatbot.models import Terme,Relation,RelationAVerifier
 import re
 import random
+from django.db.models import Q
 
 
 NON_FORT = -10
@@ -244,6 +245,10 @@ def chercherQuestion() :
 	rav = RelationAVerifier.objects.order_by('?').first()
 	return [rav.terme1.terme, rav.relation, rav.terme2.terme]
 
+
+def chercherRelationTermeUtilisateur(terme) :
+	rav = RelationAVerifier.objects.filter(Q(terme1=terme) | Q(terme2=terme)).order_by('?').first()
+	return [rav.terme1.terme, rav.relation, rav.terme2.terme]
 
 
 def traitement_reponse(rav, reponse) :
@@ -518,6 +523,16 @@ def traitement_phrase(message):
                 return "Je ne connais pas ce qu'est {}".format(list[i])
     elif ((list[0] == "posez" or list[0] == "pose") and ("question" in list or "questions" in list)):
     	return chercherQuestion()
+    elif((list[0] == "parle" and list[1] == "moi" and list[2] == "de") or (list[0] == "parlons" and list[1] == "de")) :
+    	if(list[0] == "parle"):
+    		i = 3
+    	else:
+    		i = 2
+    	if(existTerme(list[i])):
+    		return chercherRelationTermeUtilisateur(list[i])
+    	else:
+    		return "je ne sais pas ce qu'est {} ".format(list[i])
+
     else:
         """Ceci n'est peut etre pas une question
             """

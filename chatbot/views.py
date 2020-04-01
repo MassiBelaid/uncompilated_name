@@ -33,7 +33,7 @@ def home(request):
 	if (rav is not None) :
 		if(phrase == '') :
 			request.session['question'] = None
-			return render(request,'chatbot/chatbot.html',{'date':today})
+			return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour, je suis Greg. Que veux-tu savoir ?"})
 		else :
 			reponse = traitement_reponse(rav, phrase)
 			request.session['question'] = None
@@ -45,7 +45,7 @@ def home(request):
 				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse})
 	else :	
 		if(phrase == '') :
-			return render(request,'chatbot/chatbot.html',{'date':today})
+			return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour, je suis Greg. Que veux-tu savoir ?"})
 		else :
 			reponse = traitement_phrase(phrase)
 			if(type(reponse) == str) :
@@ -375,7 +375,7 @@ def traitement_phrase(message):
         else :
             """Question non comprise
                 """
-            return "Je ne comprend pas votre question"
+            return "Je ne comprends pas votre question"
             compris = False   
         
         if(compris) :

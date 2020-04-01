@@ -7,10 +7,9 @@
 <br/>
 <form method="GET" action="">
 	<div>
-		<label for="phrase">Posez une question : </label>
+		<label for="phrase">{{ reponse }} </label>
+		<br>
 		<input style ="height: 30px; width: 700px; font-size: 1em; " type="text" name="phrase" id="phrase" required/>
-	</div>
 		<input type="submit" value="Parler">
+	</div>
 </form>
-
-<p>{{ reponse }}</p>

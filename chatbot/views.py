@@ -25,6 +25,8 @@ LIST_REPONSE_SAIS_PAS = ["peut-être","Pas toujours","eventuellement","pas forc�
 LIST_REPONSE_NON_FORT = ["absolument pas","impossible","pas du tout","non"]
 LIST_REPONSE_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne crois pas","plutot pas","peut-etre pas"]
 
+LIST_EVIDENT = ["parce que c'est évident", "c'est factuel","parce ce que c'est un fait","c'est évident"]
+
 
 def home(request):
 	today = date.today()
@@ -135,9 +137,23 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 							else :
 								reponse = random.choice(LIST_SAIS_PAS)
 					else :
-						reponse = "je ne sais pas"
+						reponse = "{}.".format(random.choice(LIST_SAIS_PAS))
+			elif(relation_recherchee == "has_attribute") :
+				list_relation_has_part = Relation.objects.filter(relation = "is_a",terme1 = termeU1)
+				for rel in list_relation_has_part :
+					relation = Relation.objects.filter(terme1 = rel.terme2.terme, relation = "has_attribute", terme2 = termeU2)
+					if len(relation) > 0:
+						for r in relation :
+							if(r.poids >= OUI_FAIBLE) :
+								reponse = "{} oui.".format(random.choice(LIST_OUI_FORT))
+							elif(r.poids >= SAIS_PAS) :
+								reponse = "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
+							else :
+								reponse = random.choice(LIST_SAIS_PAS)
+					else :
+						reponse = "{}.".format(random.choice(LIST_SAIS_PAS))
 			else:	
-				reponse = "Je ne sais pas"
+				reponse = "{}.".format(random.choice(LIST_SAIS_PAS))
 			listAverifier = RelationAVerifier.objects.filter(terme1 = termeU1, relation = relation_recherchee, terme2 = termeU2)
 			if(len(listAverifier) == 0) :
 				print(len(listAverifier))
@@ -150,7 +166,6 @@ def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 	find = False
 	listRelations = Relation.objects.filter(terme1= termeU1, relation = relation_recherchee, terme2 = termeU2)
 	for rel in listRelations :
-		find = True
 		if (rel.poids < NON_FORT):
 			return random.choice(LIST_NON_FORT)
 		elif(rel.poids < NON_FAIBLE):
@@ -158,10 +173,10 @@ def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 		elif(rel.poids < SAIS_PAS) :
 			return random.choice(LIST_SAIS_PAS)
 		elif(rel.poids < OUI_FAIBLE) :
-			return "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
+			find = True
 		else :
-			return "{} oui.".format(random.choice(LIST_OUI_FORT))
-	if(find == False) :
+			find = True
+	if(find == True) :
 		listRelations = Relation.objects.filter(terme1= termeU1, relation = relation_recherchee)
 		for rel in listRelations :
 			p1 = rel.poids
@@ -173,33 +188,33 @@ def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 					termeC2 = rel.terme2.terme
 					termeC3 = termeU2
 					if(relation_recherchee == "is_a") :
-						reponse = "peut être parce que {} est sous-classe de {}, qui est sous-classe de {} ".format(termeC3,termeC2,termeC1)
+						reponse = "peut être parce que {} est sous-classe de {}, qui est sous-classe de {} ".format(termeC1,termeC2,termeC3)
 					elif(relation_recherchee == "has_part") :
-						reponse = "peut être parce que {} est composé de {}, qui composé de {} ".format(termeC3,termeC2,termeC1)
+						reponse = "peut être parce que {} est composé de {}, qui composé de {} ".format(termeC1,termeC2,termeC3)
 					elif(relation_recherchee == "has_attribute") :
-						reponse = "peut être parce que {} peut avoir comme propriété {}, qui peut avoir comme propriété {} ".format(termeC3,termeC2,termeC1)
+						reponse = "peut être parce que {} peut avoir comme propriété {}, qui peut avoir comme propriété {} ".format(termeC1,termeC2,termeC3)
 
 					return reponse
 					poids = OUI_FAIBLE
-					find = True
+					find = False
 				elif((p1 < OUI_FAIBLE and p2 >= OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < OUI_FAIBLE)) :
 					if((p1 >= SAIS_PAS and p2 >= OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= SAIS_PAS)) :
 						return "Je ne suis pas certain de cela"
 						poids = SAIS_PAS
-						find = True
+						find = False
 					elif((p1 >= NON_FAIBLE and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FAIBLE)) :
 						return "Aucune idée"
 						poids = 0
-						find = True
+						find = False
 					elif((p1 >= NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FORT)) :
 						return "j'en doute que cela soit le cas"
 						poids = -3
-						find = True
+						find = False
 					elif((p1 < NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < NON_FORT)) :
 						return "Impossible, a mon avis c'est tout le contraire"
 						poids = -11
-						find = True
-		if(find) :
+						find = False
+		if(find == False) :
 			listRelations.append(r)
             #print(listRelations)
 		else :
@@ -216,15 +231,36 @@ def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 								reponse = "peut être parce que {} est sous-classe de {}, qui est composé de {} ".format(termeC1,termeC2,termeC3)
 								return reponse
 							elif(r.poids >= SAIS_PAS) :
-								return "pas sure !"
+								return "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
 							else :
-								return "je ne sais pas"
+								return "{} ".format(random.choice(LIST_SAIS_PAS))
 					else :
-						return "je ne sais pas"
+						return "{}.".format(random.choice(LIST_SAIS_PAS))
 				return "has_part"
-			else:	
-				return "Je ne sais pas"
+			elif(relation_recherchee == "has_attribute") :
+				list_relation_has_part = Relation.objects.filter(relation = "is_a",terme1 = termeU1)
+				for rel in list_relation_has_part :
+					relation = Relation.objects.filter(terme1 = rel.terme2.terme, relation = "has_attribute", terme2 = termeU2)
+					if len(relation) > 0:
+						for r in relation :
+							if(r.poids >= OUI_FAIBLE) :
+								termeC1 = termeU1
+								termeC2 = rel.terme2.terme
+								termeC3 = termeU2
+								reponse = "peut être parce que {} est sous-classe de {}, qui possède comme propriété {} ".format(termeC1,termeC2,termeC3)
+								return reponse
+							elif(r.poids >= SAIS_PAS) :
+								return "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
+							else :
+								return "{}.".format(random.choice(LIST_SAIS_PAS))
+					else :
+						return "{} ".format(random.choice(LIST_SAIS_PAS))
+				return "has_attribute"
 
+			else:	
+				return "{} ".format(random.choice(LIST_EVIDENT))
+	else :
+		return "{} ".format(random.choice(LIST_SAIS_PAS))
     #print("{} {} {} {}".format(r.terme1,r.relation,r.terme2,r.poids))
 
 
@@ -307,12 +343,12 @@ def traitement_phrase(message):
         compris = True
         if((list[i+1] == "est" and not(re.search(list[i+2], r"une?") is None) and len(list[i+2]) < 4 and list[i+3] == "sous-classe") or \
             (list[i+1] == "appartient" and list[i+2] == "à" and list[i+3] == "la" and list[i+4] == "classe")or \
-            (list[i+1] == "est" and list[i+2] == "sous-classe")) :
+            (list[i+1] == "est" and list[i+2] == "sous-classe") or (list[i+1] == "est" and not(re.search(list[i+2], r"une?") is None))) :
             """ Question du style K est {une/un} sous-classe/appartient à la classe
                 Relation is_a
                 """
 
-            if(list[i+1] == "est") :
+            if(list[i+1] == "est" and (list[i+2] == "sous-classe" or list[i+3] == "sous-classe")) :
                 """Question formulée de la premiére façon
                     """
                 j = i+5
@@ -320,6 +356,9 @@ def traitement_phrase(message):
                     """est sous-classe
                         """
                     j -= 1
+            elif(list[i+1] == "est" and not(re.search(list[i+2], r"une?") is None)):
+            	j = i+3
+
             else :
                 """Question formulée de la deuxiemme façon
                     """
@@ -425,12 +464,12 @@ def traitement_phrase(message):
         compris = True
         if((list[i+1] == "est" and not(re.search(list[i+2], r"une?") is None) and len(list[i+2]) < 4 and list[i+3] == "sous-classe") or \
             (list[i+1] == "appartient" and list[i+2] == "à" and list[i+3] == "la" and list[i+4] == "classe")or \
-            (list[i+1] == "est" and list[i+2] == "sous-classe")) :
+            (list[i+1] == "est" and list[i+2] == "sous-classe") or (list[i+1] == "est" and not(re.search(list[i+2], r"une?") is None))) :
             """ Question du style K est {une/un} sous-classe/appartient à la classe
                 Relation is_a
                 """
 
-            if(list[i+1] == "est") :
+            if(list[i+1] == "est" and (list[i+2] == "sous-classe" or list[i+3] == "sous-classe")) :
                 """Question formulée de la premiére façon
                     """
                 j = i+5
@@ -438,6 +477,8 @@ def traitement_phrase(message):
                     """est sous-classe
                         """
                     j -= 1
+            elif(list[i+1] == "est" and not(re.search(list[i+2], r"une?") is None)):
+            	j = i+3
             else :
                 """Question formulée de la deuxiemme façon
                     """

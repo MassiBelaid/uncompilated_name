@@ -72,7 +72,11 @@ def view_date(request, jour, mois, annee=2020):
 	return render (request,'chatbot/date.html',locals())
 
 
-
+def toSingular(ter) :
+	motSing = Relation.objects.filter(terme1= ter, relation = "plur")
+	for m in motSing :
+		ter = m.terme2
+	return ter
 
 
 
@@ -104,6 +108,8 @@ def existTerme(ter) :
 
 
 def searchRelation(termeU1,relation_recherchee,termeU2) :
+	termeU1 = toSingular(termeU1)
+	termeU2 = toSingular(termeU2)
 	find = False
 	listRelations = Relation.objects.filter(terme1= termeU1, relation = relation_recherchee, terme2 = termeU2)
 	for rel in listRelations :
@@ -187,22 +193,9 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 
 
 def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
+	termeU1 = toSingular(termeU1)
+	termeU2 = toSingular(termeU2)
 	find = False
-	listRelations = Relation.objects.filter(terme1= termeU1, relation = relation_recherchee, terme2 = termeU2)
-	for rel in listRelations :
-		if (rel.poids < NON_FORT):
-			find = True
-			return random.choice(LIST_NON_FORT)
-		elif(rel.poids < NON_FAIBLE):
-			find = True
-			return random.choice(LIST_NON_FAIBLE)
-		elif(rel.poids < SAIS_PAS) :
-			find = True
-			return random.choice(LIST_SAIS_PAS)
-		elif(rel.poids < OUI_FAIBLE) :
-			find = True
-		else :
-			find = True
 	listRelations = Relation.objects.filter(terme1= termeU1, relation = relation_recherchee)
 	for rel in listRelations :
 		p1 = rel.poids
@@ -240,6 +233,21 @@ def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 					return "Impossible, a mon avis c'est tout le contraire"
 					poids = -11
 					find = False
+	listRelations = Relation.objects.filter(terme1= termeU1, relation = relation_recherchee, terme2 = termeU2)
+	for rel in listRelations :
+		if (rel.poids < NON_FORT):
+			find = True
+			return random.choice(LIST_NON_FORT)
+		elif(rel.poids < NON_FAIBLE):
+			find = True
+			return random.choice(LIST_NON_FAIBLE)
+		elif(rel.poids < SAIS_PAS) :
+			find = True
+			return random.choice(LIST_SAIS_PAS)
+		elif(rel.poids < OUI_FAIBLE) :
+			find = True
+		else :
+			find = True
 	if(find == False) :
 		listRelations.append(r)
 	else :

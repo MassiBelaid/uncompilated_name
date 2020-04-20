@@ -171,10 +171,13 @@ def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 	listRelations = Relation.objects.filter(terme1= termeU1, relation = relation_recherchee, terme2 = termeU2)
 	for rel in listRelations :
 		if (rel.poids < NON_FORT):
+			find = True
 			return random.choice(LIST_NON_FORT)
 		elif(rel.poids < NON_FAIBLE):
+			find = True
 			return random.choice(LIST_NON_FAIBLE)
 		elif(rel.poids < SAIS_PAS) :
+			find = True
 			return random.choice(LIST_SAIS_PAS)
 		elif(rel.poids < OUI_FAIBLE) :
 			find = True

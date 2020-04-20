@@ -31,6 +31,12 @@ LIST_REPONSE_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne cr
 
 LIST_EVIDENT = ["parce que c'est évident", "c'est factuel","parce ce que c'est un fait","c'est évident"]
 
+LIST_DETERMINANT = ["un","une","des","la","le","les"]
+
+LIST_CONJ_ETRE = ["est","sont"]
+LIST_CONJ_APPARTENIR = ["appartient","appartiennent"]
+
+
 
 def home(request):
 	today = date.today()
@@ -71,6 +77,20 @@ def view_date(request, jour, mois, annee=2020):
 
 
 
+def isADeterminant(det):
+	if(det in LIST_DETERMINANT) :
+		return True
+	else :
+		return False
+
+
+
+def separateurSymboleTerme(ter) :
+	if(ter[len(ter)-1] == '?') :
+		ter = ter[0:len(ter)-1]
+	if(ter[0] == 'l' and ter[1] == "\'") :
+		ter = ter[2:len(ter)]
+	return ter
 
 
 
@@ -333,7 +353,7 @@ def traitement_phrase(message):
         """ Question du style est-ce qu.......
                 """
         
-        if (list[2] == "un" or list[2] == "une") :
+        if (isADeterminant(list[2])) :
             """ phrase du style est-ce que un/une .........
                 """
             i = 3
@@ -343,37 +363,37 @@ def traitement_phrase(message):
             i = 2    
 
         compris = True
-        if((list[i+1] == "est" and not(re.search(list[i+2], r"une?") is None) and len(list[i+2]) < 4 and list[i+3] == "sous-classe") or \
-            (list[i+1] == "appartient" and list[i+2] == "à" and list[i+3] == "la" and list[i+4] == "classe")or \
-            (list[i+1] == "est" and list[i+2] == "sous-classe") or (list[i+1] == "est" and not(re.search(list[i+2], r"une?") is None))) :
+        if((list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and list[i+3] == "sous-classe") or \
+            (list[i+1] in LIST_CONJ_APPARTENIR and list[i+2] == "à" and list[i+3] == "la" and list[i+4] == "classe")or \
+            (list[i+1] in LIST_CONJ_ETRE and list[i+2] == "sous-classe") or (list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]))) :
             """ Question du style K est {une/un} sous-classe/appartient à la classe
                 Relation is_a
                 """
 
-            if(list[i+1] == "est" and (list[i+2] == "sous-classe" or list[i+3] == "sous-classe")) :
+            if(list[i+1] in LIST_CONJ_ETRE and (list[i+2] == "sous-classe" or list[i+3] == "sous-classe")) :
                 """Question formulée de la premiére façon
                     """
                 j = i+5
-                if (list[i+2] != "un" and list[i+2] != "une"):
+                if (isADeterminant(list[i+2]) == False):
                     """est sous-classe
                         """
                     j -= 1
-            elif(list[i+1] == "est" and not(re.search(list[i+2], r"une?") is None)):
+            elif(list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2])):
             	j = i+3
 
             else :
                 """Question formulée de la deuxiemme façon
                     """
                 j = i+6
-            if(list[j] == "une" or list[j] == "un") :
+            if(isADeterminant(list[j])) :
                 j += 1    
 
             relation_recherchee = "is_a"            
 
 
 
-        elif((list[i+1] == "est" and list[i+2] == "composé") or \
-            (list[i+1] == "est" and not(re.search(list[i+2], r"une?") is None) and len(list[i+2]) < 4 and list[i+3] == "partie")) :
+        elif((list[i+1] in LIST_CONJ_ETRE and list[i+2] == "composé") or \
+            (list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and list[i+3] == "partie")) :
             """Question du style K est composé/ est une partie ......
                 Relation has_part
                 """
@@ -381,13 +401,13 @@ def traitement_phrase(message):
                 """Question du style K est composé de....
                     """
                 j = i+4
-                if (list[j]=="un" or list[j]=="une"):
+                if (isADeterminant(list[j])):
                     j += 1
             else :
                 """Question du style K' est une partie de .....
                     """        
                 j = i+5
-                if (list[j]=="un" or list[j]=="une"):
+                if (isADeterminant(list[j])):
                     j += 1
                 if(list[j][len(list[j])-1] == '?'):
                 	list[j] = list[j][0:len(list[j])-1]
@@ -408,7 +428,7 @@ def traitement_phrase(message):
                 """Question peut etre qualifié(e)
                     """
                 j = i+5
-            if(list[j] == "un" or list[j] == "une") :
+            if(isADeterminant(list[j])) :
                 j += 1
             relation_recherchee = "has_attribute"        
 
@@ -422,20 +442,19 @@ def traitement_phrase(message):
         if(compris) :
             print("Vous cherchez une relation {} {} {}".format(list[i],relation_recherchee,list[j]))
             #termeU1 = Terme(list[i])
-            existeTerme1 = existTerme(list[i])
+            teU1 = separateurSymboleTerme(list[i])
+            existeTerme1 = existTerme(teU1)
             if(existeTerme1) :
                 #termeU2 = Terme(list[j])
-                teU2 = list[j]
-                if(teU2[len(teU2)-1] == '?'):
-                	teU2 = teU2[0:len(teU2)-1]
+                teU2 = separateurSymboleTerme(list[j])
                 existeTerme2 = existTerme(teU2)
                 if(existeTerme2) :
                     """On reconnait les deux termes que l'utilisateur à introduit
                     On cherche si la relation entre les deux existe """
 
                     print("Je connais les deux termes")
-                    print(searchRelation(list[i],relation_recherchee,teU2))
-                    return searchRelation(list[i],relation_recherchee,teU2)
+                    print(searchRelation(teU1,relation_recherchee,teU2))
+                    return searchRelation(teU1,relation_recherchee,teU2)
                 else :
                     """Le deuxiemme Terme est inconnu
                         """
@@ -443,11 +462,16 @@ def traitement_phrase(message):
             else :
                 """Le Premier Terme est inconnu
                     """
-                return "Je ne connais pas ce qu'est {}".format(list[i])  
+                return "Je ne connais pas ce qu'est {}".format(list[i])
+
+
+
+
+
+
+
     elif(list[0] == "pourquoi") :
     	#Question du style Pourquoi ... ?
-
-
 
 
 
@@ -460,40 +484,40 @@ def traitement_phrase(message):
                 """
             i = 1 
 
-        if((list[i] == "un") or (list[i] == "une")) :
+        if(isADeterminant(list[i])) :
         	i += 1   
 
         compris = True
-        if((list[i+1] == "est" and not(re.search(list[i+2], r"une?") is None) and len(list[i+2]) < 4 and list[i+3] == "sous-classe") or \
-            (list[i+1] == "appartient" and list[i+2] == "à" and list[i+3] == "la" and list[i+4] == "classe")or \
-            (list[i+1] == "est" and list[i+2] == "sous-classe") or (list[i+1] == "est" and not(re.search(list[i+2], r"une?") is None))) :
+        if((list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and list[i+3] == "sous-classe") or \
+            (list[i+1] in LIST_CONJ_APPARTENIR and list[i+2] == "à" and list[i+3] == "la" and list[i+4] == "classe")or \
+            (list[i+1] in LIST_CONJ_ETRE and list[i+2] == "sous-classe") or (list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]))) :
             """ Question du style K est {une/un} sous-classe/appartient à la classe
                 Relation is_a
                 """
 
-            if(list[i+1] == "est" and (list[i+2] == "sous-classe" or list[i+3] == "sous-classe")) :
+            if(list[i+1] in LIST_CONJ_ETRE and (list[i+2] == "sous-classe" or list[i+3] == "sous-classe")) :
                 """Question formulée de la premiére façon
                     """
                 j = i+5
-                if (list[i+2] != "un" and list[i+2] != "une"):
+                if (isADeterminant(list[i+2])):
                     """est sous-classe
                         """
                     j -= 1
-            elif(list[i+1] == "est" and not(re.search(list[i+2], r"une?") is None)):
+            elif(list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2])):
             	j = i+3
             else :
                 """Question formulée de la deuxiemme façon
                     """
                 j = i+6
-            if(list[j] == "une" or list[j] == "un") :
+            if(isADeterminant(list[j])) :
                 j += 1    
 
             relation_recherchee = "is_a"            
 
 
 
-        elif((list[i+1] == "est" and list[i+2] == "composé") or \
-            (list[i+1] == "est" and not(re.search(list[i+2], r"une?") is None) and len(list[i+2]) < 4 and list[i+3] == "partie")) :
+        elif((list[i+1] in LIST_CONJ_ETRE and list[i+2] == "composé") or \
+            (list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and list[i+3] == "partie")) :
             """Question du style K est composé/ est une partie ......
                 Relation has_part
                 """
@@ -501,13 +525,13 @@ def traitement_phrase(message):
                 """Question du style K est composé de....
                     """
                 j = i+4
-                if (list[j]=="un" or list[j]=="une"):
+                if (isADeterminant(list[j])):
                     j += 1
             else :
                 """Question du style K' est une partie de .....
                     """        
                 j = i+5
-                if (list[j]=="un" or list[j]=="une"):
+                if (isADeterminant(list[j])):
                     j += 1
                 if(list[j][len(list[j])-1] == '?'):
                 	list[j] = list[j][0:len(list[j])-1]
@@ -528,7 +552,7 @@ def traitement_phrase(message):
                 """Question peut etre qualifié(e)
                     """
                 j = i+5
-                if(list[j] == "un" or list[j] == "une") :
+                if(isADeterminant(list[j])) :
                     j += 1
             relation_recherchee = "has_attribute"        
 
@@ -536,26 +560,25 @@ def traitement_phrase(message):
         else :
             """Question non comprise
                 """
-            return "Je ne comprend pas votre question"
+            return "Je ne comprends pas votre question"
             compris = False   
         
         if(compris) :
-            print("Vous cherchez une relation {} {} {}".format(list[i],relation_recherchee,list[j]))
             #termeU1 = Terme(list[i])
-            existeTerme1 = existTerme(list[i])
+            teU1 = separateurSymboleTerme(list[i])
+            teU2 = separateurSymboleTerme(list[j])
+            print("Vous cherchez une relation {} {} {}".format(teU1,relation_recherchee,teU2))
+            existeTerme1 = existTerme(teU1)
             if(existeTerme1) :
                 #termeU2 = Terme(list[j])
-                teU2 = list[j]
-                if(teU2[len(teU2)-1] == '?'):
-                	teU2 = teU2[0:len(teU2)-1]
                 existeTerme2 = existTerme(teU2)
                 if(existeTerme2) :
                     """On reconnait les deux termes que l'utilisateur à introduit
                     On cherche si la relation entre les deux existe """
 
                     print("Je connais les deux termes")
-                    print(searchRelationPourquoi(list[i],relation_recherchee,teU2))
-                    return searchRelationPourquoi(list[i],relation_recherchee,teU2)
+                    print(searchRelationPourquoi(teU1,relation_recherchee,teU2))
+                    return searchRelationPourquoi(teU1,relation_recherchee,teU2)
                 else :
                     """Le deuxiemme Terme est inconnu
                         """
@@ -563,7 +586,7 @@ def traitement_phrase(message):
             else :
                 """Le Premier Terme est inconnu
                     """
-                return "Je ne connais pas ce qu'est {}".format(list[i])
+                return "Je ne connais pas ce qu'est {}".format(teU1)
     elif ((list[0] == "posez" or list[0] == "pose") and ("question" in list or "questions" in list)):
     	return chercherQuestion()
     elif((list[0] == "parle" and list[1] == "moi" and list[2] == "de") or (list[0] == "parlons" and list[1] == "de")) :

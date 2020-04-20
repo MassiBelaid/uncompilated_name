@@ -13,6 +13,10 @@ SAIS_PAS = 5
 OUI_FAIBLE = 30
 NOMBRE_VALIDATION_RELATION = 2
 
+LIST_IS_A = ["est un", "est une sous-classe de", "est un sous-ensemble de", "appartient à la classe de"]
+LIST_HAS_PART = ["est composé de", "est une partie de"]
+LIST_HAS_ATTRIBUTE = ["peut être qualifié de", "peut avoir comme propriété de","a comme propriété de", "est qualifié de","peut","sait"]
+
 LIST_OUI_FORT = ["certainement","sûrement","absolument"]
 LIST_OUI_FAIBLE = ["en majorité","globalement","probablement","dans beaucoup de cas"]
 LIST_SAIS_PAS = ["peut-être","Pas toujours","eventuellement","pas forcément"]
@@ -176,103 +180,98 @@ def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 			find = True
 		else :
 			find = True
-	if(find == True) :
-		listRelations = Relation.objects.filter(terme1= termeU1, relation = relation_recherchee)
-		for rel in listRelations :
-			p1 = rel.poids
-			listRelations2 = Relation.objects.filter(terme2= termeU2, relation = relation_recherchee, terme1 = rel.terme2.terme)
-			for rel2 in listRelations2 :
-				p2 = rel2.poids
-				if(p1 >= OUI_FAIBLE and p2 >= OUI_FAIBLE) :
-					termeC1 = termeU1
-					termeC2 = rel.terme2.terme
-					termeC3 = termeU2
-					if(relation_recherchee == "is_a") :
-						reponse = "peut être parce que {} est sous-classe de {}, qui est sous-classe de {} ".format(termeC1,termeC2,termeC3)
-					elif(relation_recherchee == "has_part") :
-						reponse = "peut être parce que {} est composé de {}, qui composé de {} ".format(termeC1,termeC2,termeC3)
-					elif(relation_recherchee == "has_attribute") :
-						reponse = "peut être parce que {} peut avoir comme propriété {}, qui peut avoir comme propriété {} ".format(termeC1,termeC2,termeC3)
+	listRelations = Relation.objects.filter(terme1= termeU1, relation = relation_recherchee)
+	for rel in listRelations :
+		p1 = rel.poids
+		listRelations2 = Relation.objects.filter(terme2= termeU2, relation = relation_recherchee, terme1 = rel.terme2.terme)
+		for rel2 in listRelations2 :
+			p2 = rel2.poids
+			if(p1 >= OUI_FAIBLE and p2 >= OUI_FAIBLE) :
+				termeC1 = termeU1
+				termeC2 = rel.terme2.terme
+				termeC3 = termeU2
+				if(relation_recherchee == "is_a") :
+					reponse = "peut être parce que {} est sous-classe de {}, qui est sous-classe de {} ".format(termeC1,termeC2,termeC3)
+				elif(relation_recherchee == "has_part") :
+					reponse = "peut être parce que {} est composé de {}, qui composé de {} ".format(termeC1,termeC2,termeC3)
+				elif(relation_recherchee == "has_attribute") :
+					reponse = "peut être parce que {} peut avoir comme propriété {}, qui peut avoir comme propriété {} ".format(termeC1,termeC2,termeC3)
 
-					return reponse
-					poids = OUI_FAIBLE
+				return reponse
+				poids = OUI_FAIBLE
+				find = False
+			elif((p1 < OUI_FAIBLE and p2 >= OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < OUI_FAIBLE)) :
+				if((p1 >= SAIS_PAS and p2 >= OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= SAIS_PAS)) :
+					return "Je ne suis pas certain de cela"
+					poids = SAIS_PAS
 					find = False
-				elif((p1 < OUI_FAIBLE and p2 >= OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < OUI_FAIBLE)) :
-					if((p1 >= SAIS_PAS and p2 >= OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= SAIS_PAS)) :
-						return "Je ne suis pas certain de cela"
-						poids = SAIS_PAS
-						find = False
-					elif((p1 >= NON_FAIBLE and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FAIBLE)) :
-						return "Aucune idée"
-						poids = 0
-						find = False
-					elif((p1 >= NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FORT)) :
-						return "j'en doute que cela soit le cas"
-						poids = -3
-						find = False
-					elif((p1 < NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < NON_FORT)) :
-						return "Impossible, a mon avis c'est tout le contraire"
-						poids = -11
-						find = False
-		if(find == False) :
-			listRelations.append(r)
-            #print(listRelations)
-		else :
-			if(relation_recherchee == "has_part"):
-				list_relation_has_part = Relation.objects.filter(relation = "is_a",terme1 = termeU1)
-				for rel in list_relation_has_part :
-					relation = Relation.objects.filter(terme1 = rel.terme2.terme, relation = "has_part", terme2 = termeU2)
-					if len(relation) > 0:
-						for r in relation :
-							if(r.poids >= OUI_FAIBLE) :
-								termeC1 = termeU1
-								termeC2 = rel.terme2.terme
-								termeC3 = termeU2
-								reponse = "peut être parce que {} est sous-classe de {}, qui est composé de {} ".format(termeC1,termeC2,termeC3)
-								return reponse
-							elif(r.poids >= SAIS_PAS) :
-								return "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
-							else :
-								return "{} ".format(random.choice(LIST_SAIS_PAS))
-					else :
-						return "{}.".format(random.choice(LIST_SAIS_PAS))
-				return "has_part"
-			elif(relation_recherchee == "has_attribute") :
-				list_relation_has_part = Relation.objects.filter(relation = "is_a",terme1 = termeU1)
-				for rel in list_relation_has_part :
-					relation = Relation.objects.filter(terme1 = rel.terme2.terme, relation = "has_attribute", terme2 = termeU2)
-					if len(relation) > 0:
-						for r in relation :
-							if(r.poids >= OUI_FAIBLE) :
-								termeC1 = termeU1
-								termeC2 = rel.terme2.terme
-								termeC3 = termeU2
-								reponse = "peut être parce que {} est sous-classe de {}, qui possède comme propriété {} ".format(termeC1,termeC2,termeC3)
-								return reponse
-							elif(r.poids >= SAIS_PAS) :
-								return "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
-							else :
-								return "{}.".format(random.choice(LIST_SAIS_PAS))
-					else :
-						return "{} ".format(random.choice(LIST_SAIS_PAS))
-				return "has_attribute"
-
-			else:	
-				return "{} ".format(random.choice(LIST_EVIDENT))
+				elif((p1 >= NON_FAIBLE and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FAIBLE)) :
+					return "Aucune idée"
+					poids = 0
+					find = False
+				elif((p1 >= NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FORT)) :
+					return "j'en doute que cela soit le cas"
+					poids = -3
+					find = False
+				elif((p1 < NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < NON_FORT)) :
+					return "Impossible, a mon avis c'est tout le contraire"
+					poids = -11
+					find = False
+	if(find == False) :
+		listRelations.append(r)
 	else :
-		return "{} ".format(random.choice(LIST_SAIS_PAS))
-    #print("{} {} {} {}".format(r.terme1,r.relation,r.terme2,r.poids))
+		if(relation_recherchee == "has_part"):
+			list_relation_has_part = Relation.objects.filter(relation = "is_a",terme1 = termeU1)
+			for rel in list_relation_has_part :
+				relation = Relation.objects.filter(terme1 = rel.terme2.terme, relation = "has_part", terme2 = termeU2)
+				if len(relation) > 0:
+					for r in relation :
+						if(r.poids >= OUI_FAIBLE) :
+							termeC1 = termeU1
+							termeC2 = rel.terme2.terme
+							termeC3 = termeU2
+							reponse = "peut être parce que {} est sous-classe de {}, qui est composé de {} ".format(termeC1,termeC2,termeC3)
+							return reponse
+						elif(r.poids >= SAIS_PAS) :
+							return "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
+						else :
+							return "{} ".format(random.choice(LIST_SAIS_PAS))
+				else :
+					return "{}.".format(random.choice(LIST_SAIS_PAS))
+			return "has_part"
+		elif(relation_recherchee == "has_attribute") :
+			list_relation_has_part = Relation.objects.filter(relation = "is_a",terme1 = termeU1)
+			for rel in list_relation_has_part :
+				relation = Relation.objects.filter(terme1 = rel.terme2.terme, relation = "has_attribute", terme2 = termeU2)
+				if len(relation) > 0:
+					for r in relation :
+						if(r.poids >= OUI_FAIBLE) :
+							termeC1 = termeU1
+							termeC2 = rel.terme2.terme
+							termeC3 = termeU2
+							reponse = "peut être parce que {} est sous-classe de {}, qui possède comme propriété {} ".format(termeC1,termeC2,termeC3)
+							return reponse
+						elif(r.poids >= SAIS_PAS) :
+							return "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
+						else :
+							return "{}.".format(random.choice(LIST_SAIS_PAS))
+				else :
+					return "{} ".format(random.choice(LIST_SAIS_PAS))
+			return "has_attribute"
+
+		else:	
+			return "{} ".format(random.choice(LIST_EVIDENT))
 
 
 
 
 def construireQuestion(rav) :
 	if(rav[1] == "is_a") :
-		corpMsg = "est sous-classe de"
+		corpMsg = random.choice(LIST_IS_A)
 	elif(rav[1] == "has_part") :
-		corpMsg = "est composé de"
+		corpMsg = random.choice(LIST_HAS_PART)
 	elif(rav[1] == "has_attribute") :
-		corpMsg = "peut avoir comme propriété"
+		corpMsg = random.choice(LIST_HAS_ATTRIBUTE)
 	return "est-ce que {} {} {} ?".format(rav[0], corpMsg, rav[2])
 
 

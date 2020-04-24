@@ -719,17 +719,18 @@ def traitement_phrase(message):
 
 
     elif(separateurSymboleTerme(list[0]) in LIST_BONJOUR) :
-    	list.remove("?")
+    	if("?" in list) :
+    		list.remove("?")
     	if(len(list)>3) :
     		mess = "{} {} {}".format(list[1],list[2],list[3])
     		if(mess in LIST_CA_VA) :
-    			return "{}, je vais bien merci. {}".format(random.choice(LIST_BONJOUR),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+    			return "{}, je vais bien merci. {}".format(random.choice(LIST_BONJOUR),random.choice(LIST_QUE_VEUX_TU_SAVOIR)).capitalize()
     	elif(len(list)>2) :
     		mess = "{} {}".format(list[1],list[2])
     		if(mess in LIST_CA_VA) :
-    			return "{}, je vais bien merci. {}".format(random.choice(LIST_BONJOUR),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+    			return "{}, je vais bien merci. {}".format(random.choice(LIST_BONJOUR),random.choice(LIST_QUE_VEUX_TU_SAVOIR)).capitalize()
     	else :
-    		return random.choice(LIST_BONJOUR)
+    		return random.choice(LIST_BONJOUR).capitalize()
 
 
 

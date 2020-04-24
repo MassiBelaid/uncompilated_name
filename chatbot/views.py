@@ -19,9 +19,11 @@ LIST_IS_A = ["est un", "est une sous-classe de", "est un sous-ensemble de", "app
 LIST_HAS_PART = ["est composé de", "est une partie de"]
 LIST_HAS_ATTRIBUTE = ["peut être qualifié de", "peut avoir comme propriété de","a comme propriété de", "est qualifié de","peut","sait"]
 
+LIST_QUE_VEUX_TU_SAVOIR = ["Si tu veux savoir autre chose, je t'écoute.", "Si tu as besoin de savoir quelque chose, je t'en prie.", "Si tu as besoin de savoir quelque chose, je t'écoute."]
+
 LIST_OUI_FORT = ["certainement","sûrement","absolument"]
 LIST_OUI_FAIBLE = ["en majorité","globalement","probablement","dans beaucoup de cas"]
-LIST_SAIS_PAS = ["peut-être","Pas toujours","eventuellement","pas forcément"]
+LIST_SAIS_PAS = ["peut-être","je ne sais pas", "je sais pas","aucune idée"]
 LIST_NON_FORT = ["absolument pas","impossible","pas du tout"]
 LIST_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne crois pas"]
 
@@ -34,6 +36,8 @@ LIST_REPONSE_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne cr
 LIST_EVIDENT = ["parce que c'est évident", "c'est factuel","parce ce que c'est un fait","c'est évident"]
 
 LIST_DETERMINANT = ["un","une","des","la","le","les"]
+LIST_BONJOUR = ["salut","bonjour","coucou","hello","bonsoir","hey"]
+LIST_CA_VA = ["ça va", "sa va", "ca va", "comment vas-tu", "comment allez-vous","comment vas tu", "comment allez vous", "comment ça va", "comment ca va"]
 
 LIST_CONJ_ETRE = ["est","sont"]
 LIST_CONJ_APPARTENIR = ["appartient","appartiennent"]
@@ -86,7 +90,7 @@ def extraire(terme) :
 def extraireJDM(terme, numRel) :
 	termeURL = terme.replace("é","%E9").replace("è","%E8").replace("ê","%EA").replace("à","%E0").replace("ç","%E7")
 	with urllib.request.urlopen("http://www.jeuxdemots.org/rezo-dump.php?gotermsubmit=Chercher&gotermrel={}&rel={}".format(termeURL,numRel)) as url :
-		s = url.read().decode('latin-1')
+		s = url.read().decode('ISO-8859-1')
 		if("<CODE>" in s):
 			lesTermes = s[s.find("// les noeuds/termes (Entries) : e;eid;'name';type;w;'formated name'") + len("// les noeuds/termes (Entries) : e;eid;'name';type;w;'formated name'"):s.find("// les types de relations (Relation Types) : rt;rtid;'trname';'trgpname';'rthelp'")]
 			lesRelSort = s[s.find("// les relations sortantes : r;rid;node1;node2;type;w") + len("// les relations sortantes : r;rid;node1;node2;type;w"):s.find("// les relations entrantes : r;rid;node1;node2;type;w ")]
@@ -174,6 +178,8 @@ def separateurSymboleTerme(ter) :
 		ter = ter[0:len(ter)-1]
 	if(ter[0] == 'l' and ter[1] == "\'") :
 		ter = ter[2:len(ter)]
+	if(ter[len(ter)-1] == ',') :
+		ter = ter[0:len(ter)-1]
 	return ter
 
 
@@ -400,13 +406,19 @@ def construireQuestion(rav) :
 
 
 def chercherQuestion() :
-	rav = RelationAVerifier.objects.order_by('?').first()
+	if(RelationAVerifier.objects.filter().exists()) :
+		rav = RelationAVerifier.objects.order_by('?').first()
+	else :
+		return "Je n'ai pas ça en tête pour le moment. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 	return [rav.terme1.id, rav.relation, rav.terme2.id]
 
 
 def chercherRelationTermeUtilisateur(terme) :
 	idTerme = Terme.objects.get(terme = terme, raffinement = RAFFINEMENT).id
-	rav = RelationAVerifier.objects.filter(Q(terme1=idTerme) | Q(terme2=idTerme)).order_by('?').first()
+	if(RelationAVerifier.objects.filter(Q(terme1=idTerme) | Q(terme2=idTerme)).exists()) :
+		rav = RelationAVerifier.objects.filter(Q(terme1=idTerme) | Q(terme2=idTerme)).order_by('?').first()
+	else :
+		return "Je n'ai pas ça en tête pour le moment. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 	return [rav.terme1.id, rav.relation, rav.terme2.id]
 
 
@@ -415,11 +427,11 @@ def traitement_reponse(rav, reponse) :
 	if(reponse in LIST_REPONSE_OUI_FORT):
 		poid = OUI_FAIBLE
 		RelationAVerifier.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
-		rep = "T'as repondu oui"
+		rep = "D'accord, alors je note que c'est correct. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 	elif(reponse in LIST_REPONSE_OUI_FAIBLE) :
 		poid = SAIS_PAS
 		RelationAVerifier.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
-		rep = "Tu dis oui faible"
+		rep = "D'accord, je note ça comme parfois vrai. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 	elif(reponse in LIST_REPONSE_SAIS_PAS) :
 		poid = NON_FAIBLE
 		RelationAVerifier.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
@@ -437,7 +449,7 @@ def traitement_reponse(rav, reponse) :
 
 	listRelationAVerifier = RelationAVerifier.objects.filter(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
 	if(len(listRelationAVerifier) >= NOMBRE_VALIDATION_RELATION):
-		Relation.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
+		Relation.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid,source = "UN")
 		RelationAVerifier.objects.filter(terme1=rav[0],relation = rav[1],terme2=rav[2]).delete()
 
 	return rep 
@@ -687,8 +699,14 @@ def traitement_phrase(message):
                 """Le Premier Terme est inconnu
                     """
                 return "Je ne connais pas ce qu'est {}".format(teU1)
+
+
+
     elif ((list[0] == "posez" or list[0] == "pose") and ("question" in list or "questions" in list)):
     	return chercherQuestion()
+
+
+
     elif((list[0] == "parle" and list[1] == "moi" and list[2] == "de") or (list[0] == "parlons" and list[1] == "de")) :
     	if(list[0] == "parle"):
     		i = 3
@@ -699,8 +717,24 @@ def traitement_phrase(message):
     	else:
     		return "je ne sais pas ce qu'est {} ".format(list[i])
 
+
+    elif(separateurSymboleTerme(list[0]) in LIST_BONJOUR) :
+    	list.remove("?")
+    	if(len(list)>3) :
+    		mess = "{} {} {}".format(list[1],list[2],list[3])
+    		if(mess in LIST_CA_VA) :
+    			return "{}, je vais bien merci. {}".format(random.choice(LIST_BONJOUR),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+    	elif(len(list)>2) :
+    		mess = "{} {}".format(list[1],list[2])
+    		if(mess in LIST_CA_VA) :
+    			return "{}, je vais bien merci. {}".format(random.choice(LIST_BONJOUR),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+    	else :
+    		return random.choice(LIST_BONJOUR)
+
+
+
     else:
         """Ceci n'est peut etre pas une question
             """
-        return "{} est une question ? ".format(message)
+        return "Je ne comprends pas encore ce que vous essayer de me dire. {} \nMESSAGE : {} ".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR),message)
 

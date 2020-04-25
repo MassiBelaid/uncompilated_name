@@ -80,14 +80,15 @@ def home(request):
 
 def extraire(terme) :
 
-	r6 = extraireJDM(terme,"6")
-	r9 = extraireJDM(terme,"9")
-	print("======================================================================={}".format(extraireJDM(terme,"6")))
-	print("======================================================================={}".format(extraireJDM(terme,"9")))
-	return r6
+	id = extraireJDM(terme,"6")
+	extraireJDM(terme,"9")
+	extraireJDM(terme,"1")
+	print("======================================================================={}".format(id))
+	return id
 
 
 def extraireJDM(terme, numRel) :
+	idDuTerme = -1
 	termeURL = terme.replace("é","%E9").replace("è","%E8").replace("ê","%EA").replace("à","%E0").replace("ç","%E7")
 	with urllib.request.urlopen("http://www.jeuxdemots.org/rezo-dump.php?gotermsubmit=Chercher&gotermrel={}&rel={}".format(termeURL,numRel)) as url :
 		s = url.read().decode('ISO-8859-1')
@@ -111,7 +112,10 @@ def extraireJDM(terme, numRel) :
 							caseDuTerme = casesTermes[5]
 							caseDuTerme = caseDuTerme[1: len(caseDuTerme)-1]
 							if(not Terme.objects.filter(id = casesTermes[1]).exists() and len(caseDuTerme.split(">")[0]) < 100 and int(casesTermes[4]) > 50 ):
-								Terme.objects.create(id = casesTermes[1], terme = caseDuTerme.split(">")[0], raffinement = caseDuTerme.split(">")[1], importe = "0")
+								try :
+									Terme.objects.create(id = casesTermes[1], terme = caseDuTerme.split(">")[0], raffinement = caseDuTerme.split(">")[1], importe = "0")
+								except Exception:
+									print("term ignored {} =======================================".format(caseDuTerme))
 								
 				elif(len(casesTermes) == 5 and not("=" in casesTermes[2])) :
 					id = casesTermes[1]
@@ -120,16 +124,21 @@ def extraireJDM(terme, numRel) :
 					if(caseDuTerme.lower() == terme and len(caseDuTerme) < 100 and int(casesTermes[4]) > 50) :
 						idDuTerme = casesTermes[1]
 						Terme(id = idDuTerme, terme = caseDuTerme, raffinement = RAFFINEMENT).delete()
-						Terme.objects.create(id = idDuTerme, terme = caseDuTerme, raffinement = RAFFINEMENT, importe = "1")
+						try :
+							Terme.objects.create(id = idDuTerme, terme = caseDuTerme, raffinement = RAFFINEMENT, importe = "1")
+						except Exception:
+							print("term ignored {} =======================================".format(caseDuTerme))
 					else :
-						if(not Terme.objects.filter(id = casesTermes[1]).exists() and len(caseDuTerme) < 100 and int(casesTermes[4]) > 50):					
-							Terme.objects.create(id = casesTermes[1], terme = caseDuTerme, raffinement = RAFFINEMENT, importe = "0")
+						if(not Terme.objects.filter(id = casesTermes[1]).exists() and len(caseDuTerme) < 100 and int(casesTermes[4]) > 50):
+							try :				
+								Terme.objects.create(id = casesTermes[1], terme = caseDuTerme, raffinement = RAFFINEMENT, importe = "0")
+							except Exception:
+								print("term ignored {} =======================================".format(caseDuTerme))
 							
 
 			for ligne in listTouteRelation :
 				casesRelation = ligne.split(";")
 				if(len(casesRelation) == 6):
-						
 					if(numRel == "1") :
 						r = "raff_sem"
 					elif(numRel == "6") :
@@ -137,11 +146,13 @@ def extraireJDM(terme, numRel) :
 					elif(numRel == "9") :
 						r = "has_part"
 					existeTermBool = Terme.objects.filter(id = casesRelation[3]).exists() and Terme.objects.filter(id = casesRelation[2]).exists() and not Relation.objects.filter(terme1 = Terme.objects.get(id = casesRelation[2]), terme2 = Terme.objects.get(id = casesRelation[3]), relation = r).exists()
+					print(" ============== ================== == = = = ={}       {}   BOOL {}".format(terme, r, existeTermBool))
 					if(existeTermBool):
 						Relation.objects.create(relation = r, source = "JDM", poids = casesRelation[5], terme1 = Terme.objects.get(id = casesRelation[2]), terme2 = Terme.objects.get(id = casesRelation[3]) )
+						print("JENTREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE    {}     {}    {}".format(r,casesRelation[3],casesRelation[2]))
 			return idDuTerme
 		else :
-			return -1
+			return idDuTerme
 
 		
 
@@ -408,13 +419,14 @@ def construireQuestion(rav) :
 def chercherQuestion() :
 	if(RelationAVerifier.objects.filter().exists()) :
 		rav = RelationAVerifier.objects.order_by('?').first()
+		return [rav.terme1.id, rav.relation, rav.terme2.id]
 	else :
 		return "Je n'ai pas ça en tête pour le moment. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
-	return [rav.terme1.id, rav.relation, rav.terme2.id]
+	
 
 
 def chercherRelationTermeUtilisateur(terme) :
-	idTerme = Terme.objects.get(terme = terme, raffinement = RAFFINEMENT).id
+	idTerme = Terme.objects.filter(terme = terme, raffinement = RAFFINEMENT).first().id
 	if(RelationAVerifier.objects.filter(Q(terme1=idTerme) | Q(terme2=idTerme)).exists()) :
 		rav = RelationAVerifier.objects.filter(Q(terme1=idTerme) | Q(terme2=idTerme)).order_by('?').first()
 	else :

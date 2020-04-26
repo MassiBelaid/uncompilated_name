@@ -5,8 +5,10 @@ from chatbot.models import Terme,Relation,RelationAVerifier
 import re
 import random
 from django.db.models import Q
+from django.db import transaction
 import urllib.request
 from threading import Thread
+
 
 
 NON_FORT = -10
@@ -21,8 +23,8 @@ LIST_HAS_ATTRIBUTE = ["peut être qualifié de", "peut avoir comme propriété d
 
 LIST_QUE_VEUX_TU_SAVOIR = ["Si tu veux savoir autre chose, je t'écoute.", "Si tu as besoin de savoir quelque chose, je t'en prie.", "Si tu as besoin de savoir quelque chose, je t'écoute."]
 
-LIST_OUI_FORT = ["certainement","sûrement","absolument"]
-LIST_OUI_FAIBLE = ["en majorité","globalement","probablement","dans beaucoup de cas"]
+LIST_OUI_FORT = ["certainement","sûrement","absolument","oui c'est certain","oui c'est sûr"]
+LIST_OUI_FAIBLE = ["en majorité","globalement","probablement","dans beaucoup de cas","pas toujours"]
 LIST_SAIS_PAS = ["peut-être","je ne sais pas", "je sais pas","aucune idée"]
 LIST_NON_FORT = ["absolument pas","impossible","pas du tout"]
 LIST_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne crois pas"]
@@ -44,7 +46,7 @@ LIST_CONJ_APPARTENIR = ["appartient","appartiennent"]
 
 RAFFINEMENT = "nul0"
 
-
+LIST_RELATION_JDM = ['1','6','9']
 
 def home(request):
 	today = date.today()
@@ -79,15 +81,36 @@ def home(request):
 
 
 def extraire(terme) :
+	LIST_ALL = []
+	
+	LIST_ALL1 = extraireJDM(terme,"1")
+	LIST_ALL6 = extraireJDM(terme,"6")
+	LIST_ALL9 = extraireJDM(terme,"9")
+	LIST_ALL17 = extraireJDM(terme,"17")
 
-	id = extraireJDM(terme,"6")
-	extraireJDM(terme,"9")
-	extraireJDM(terme,"1")
-	print("======================================================================={}".format(id))
-	return id
+	LIST_ALL_RELATIONS = LIST_ALL1[1] + LIST_ALL6[1] + LIST_ALL9[1] + LIST_ALL17[1]
+	LIST_ALL_TERMES = LIST_ALL1[0] + LIST_ALL6[0] + LIST_ALL9[0] + LIST_ALL17[0]
+
+	idT = LIST_ALL1[2][0]
+
+	for a in LIST_ALL_RELATIONS :
+		print(str(a.terme1.terme) + a.relation + str(a.terme2.terme))
+
+	#print(LIST_ALL[1])
+
+	Relation.objects.bulk_create(LIST_ALL_RELATIONS)
+	#Terme.objects.bulk_create(LIST_ALL_TERMES)
+
+	
+	print("======================================================================={}".format(idT))
+	return idT
+
+
+
 
 
 def extraireJDM(terme, numRel) :
+	LIST_ALL = [[],[],[]]
 	idDuTerme = -1
 	termeURL = terme.replace("é","%E9").replace("è","%E8").replace("ê","%EA").replace("à","%E0").replace("ç","%E7")
 	with urllib.request.urlopen("http://www.jeuxdemots.org/rezo-dump.php?gotermsubmit=Chercher&gotermrel={}&rel={}".format(termeURL,numRel)) as url :
@@ -111,9 +134,10 @@ def extraireJDM(terme, numRel) :
 						if(existTBool == False)	:
 							caseDuTerme = casesTermes[5]
 							caseDuTerme = caseDuTerme[1: len(caseDuTerme)-1]
-							if(not Terme.objects.filter(id = casesTermes[1]).exists() and len(caseDuTerme.split(">")[0]) < 100 and int(casesTermes[4]) > 50 ):
+							if(len(caseDuTerme.split(">")[0]) < 100 and int(casesTermes[4]) > 50 ):
 								try :
 									Terme.objects.create(id = casesTermes[1], terme = caseDuTerme.split(">")[0], raffinement = caseDuTerme.split(">")[1], importe = "0")
+									LIST_ALL[0].append(Terme(id = casesTermes[1], terme = caseDuTerme.split(">")[0], raffinement = caseDuTerme.split(">")[1], importe = "0"))
 								except Exception:
 									print("term ignored {} =======================================".format(caseDuTerme))
 								
@@ -121,17 +145,20 @@ def extraireJDM(terme, numRel) :
 					id = casesTermes[1]
 					caseDuTerme = casesTermes[2]
 					caseDuTerme = caseDuTerme[1: len(caseDuTerme)-1]
-					if(caseDuTerme.lower() == terme and len(caseDuTerme) < 100 and int(casesTermes[4]) > 50) :
+					if(caseDuTerme.lower() == terme and len(caseDuTerme) < 100) :
 						idDuTerme = casesTermes[1]
+						LIST_ALL[2].append(idDuTerme)
 						Terme(id = idDuTerme, terme = caseDuTerme, raffinement = RAFFINEMENT).delete()
 						try :
 							Terme.objects.create(id = idDuTerme, terme = caseDuTerme, raffinement = RAFFINEMENT, importe = "1")
+							LIST_ALL[0].append(Terme(id = idDuTerme, terme = caseDuTerme, raffinement = RAFFINEMENT, importe = "1"))
 						except Exception:
 							print("term ignored {} =======================================".format(caseDuTerme))
 					else :
 						if(not Terme.objects.filter(id = casesTermes[1]).exists() and len(caseDuTerme) < 100 and int(casesTermes[4]) > 50):
 							try :				
 								Terme.objects.create(id = casesTermes[1], terme = caseDuTerme, raffinement = RAFFINEMENT, importe = "0")
+								LIST_ALL[0].append(Terme(id = casesTermes[1], terme = caseDuTerme, raffinement = RAFFINEMENT, importe = "0"))
 							except Exception:
 								print("term ignored {} =======================================".format(caseDuTerme))
 							
@@ -145,14 +172,20 @@ def extraireJDM(terme, numRel) :
 						r = "is_a"
 					elif(numRel == "9") :
 						r = "has_part"
+					elif(numRel == "17") :
+						r = "has_attribute"
 					existeTermBool = Terme.objects.filter(id = casesRelation[3]).exists() and Terme.objects.filter(id = casesRelation[2]).exists() and not Relation.objects.filter(terme1 = Terme.objects.get(id = casesRelation[2]), terme2 = Terme.objects.get(id = casesRelation[3]), relation = r).exists()
-					print(" ============== ================== == = = = ={}       {}   BOOL {}".format(terme, r, existeTermBool))
+					#print(" ============== ================== == = = = ={}       {}   le terme existe : {}".format(terme, r, existeTermBool))
 					if(existeTermBool):
-						Relation.objects.create(relation = r, source = "JDM", poids = casesRelation[5], terme1 = Terme.objects.get(id = casesRelation[2]), terme2 = Terme.objects.get(id = casesRelation[3]) )
-						print("JENTREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE    {}     {}    {}".format(r,casesRelation[3],casesRelation[2]))
-			return idDuTerme
+						try :
+							LIST_ALL[1].append(Relation(relation = r, source = "JDM", poids = casesRelation[5], terme1 = Terme.objects.get(id = casesRelation[2]), terme2 = Terme.objects.get(id = casesRelation[3])))
+							#print("JENTREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE    {}     {}    {}".format(r,casesRelation[3],casesRelation[2]))
+							#Relation(relation = r, source = "JDM", poids = casesRelation[5], terme1 = Terme.objects.get(id = casesRelation[2]), terme2 = Terme.objects.get(id = casesRelation[3])).save()
+						except Exception :
+							print("relation ignored {} =======================================".format(r))
+			return LIST_ALL
 		else :
-			return idDuTerme
+			return LIST_ALL
 
 		
 
@@ -184,14 +217,17 @@ def isADeterminant(det):
 
 
 
-def separateurSymboleTerme(ter) :
-	if(ter[len(ter)-1] == '?') :
-		ter = ter[0:len(ter)-1]
-	if(ter[0] == 'l' and ter[1] == "\'") :
-		ter = ter[2:len(ter)]
-	if(ter[len(ter)-1] == ',') :
-		ter = ter[0:len(ter)-1]
-	return ter
+def separateurSymboleTerme(mot) :
+	if(len(mot) > 1) :
+		if(mot[len(mot)-1] == '?') :
+			mot = mot[0:len(mot)-1]
+		if(mot[0] == 'l' and mot[1] == "\'") :
+			mot = mot[2:len(mot)]
+		if(mot[len(mot)-1] == ',') :
+			mot = mot[0:len(mot)-1]
+		if(mot[0] == "d" and mot[1] == "\'") :
+			mot = mot[2:len(mot)]
+	return mot
 
 
 
@@ -200,9 +236,9 @@ def existTerme(ter) :
     if(Terme.objects.filter(terme = ter, raffinement = RAFFINEMENT, importe = "1").exists()) :
     	termeBDDl = Terme.objects.get(terme = ter, importe = "1", raffinement = RAFFINEMENT)
     	idTerme = termeBDDl.id
+    	print("__________________________________" + str(idTerme))
     if(idTerme == -1) :
     	idTerme = extraire(ter)
-
     return idTerme 
 
 
@@ -262,7 +298,7 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 			if(relation_recherchee == "has_part"):
 				list_relation_has_part = Relation.objects.filter(relation = "is_a",terme1 = termeU1)
 				for rel in list_relation_has_part :
-					relation = Relation.objects.filter(terme1 = rel.terme2.terme, relation = "has_part", terme2 = termeU2)
+					relation = Relation.objects.filter(terme1 = rel.terme2.id, relation = "has_part", terme2 = termeU2)
 					if len(relation) > 0:
 						for r in relation :
 							if(r.poids >= OUI_FAIBLE) :
@@ -447,15 +483,15 @@ def traitement_reponse(rav, reponse) :
 	elif(reponse in LIST_REPONSE_SAIS_PAS) :
 		poid = NON_FAIBLE
 		RelationAVerifier.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
-		rep = "Tu dis que tu ne sais pas"
+		rep = "D'accord, nous sommes donc deux à ne pas savoir. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 	elif(reponse in LIST_REPONSE_NON_FORT) :
 		poid = NON_FORT - 1
 		RelationAVerifier.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
-		rep = "Tu dis que c'est non"
+		rep = "D'accord, je note que ce n'est absolument pas le cas. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 	elif(reponse in LIST_REPONSE_NON_FAIBLE) :
 		poid = NON_FORT
 		RelationAVerifier.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
-		rep = "Tu dis non faible"
+		rep = "D'accord, je note que ça peut ne pas être le cas. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 	else :
 		return traitement_phrase(reponse)
 
@@ -469,9 +505,19 @@ def traitement_reponse(rav, reponse) :
 
 
 
+def pre_traitement_phrase(message):
+	message = message.lower()
+	listAvant = message.split()
+	listApres = []
+	for mot in listAvant :
+		listApres.append(separateurSymboleTerme(mot))
+	print(listAvant)
+	return listApres
+
+
+
 def traitement_phrase(message):
-    message = message.lower()
-    list = message.split()
+    list = pre_traitement_phrase(message)
     print(list)
     
     if(list[0] == "est-ce" and list[1][0] == "q" and list[1][1] == "u"):
@@ -555,7 +601,12 @@ def traitement_phrase(message):
                 j = i+5
             if(isADeterminant(list[j])) :
                 j += 1
-            relation_recherchee = "has_attribute"        
+            relation_recherchee = "has_attribute"
+        elif(list[i+1] == "possède" or list[i+1] == "possede") :
+        	j = i+2
+        	if(isADeterminant(list[j])) :
+        		j += 1
+        	relation_recherchee = "r_own"
 
 
         else :
@@ -567,11 +618,11 @@ def traitement_phrase(message):
         if(compris) :
             print("Vous cherchez une relation {} {} {}".format(list[i],relation_recherchee,list[j]))
             #termeU1 = Terme(list[i])
-            teU1 = separateurSymboleTerme(list[i])
+            teU1 = list[i]
             existeTerme1 = existTerme(teU1)
             if(existeTerme1 != -1) :
                 #termeU2 = Terme(list[j])
-                teU2 = separateurSymboleTerme(list[j])
+                teU2 = list[j]
                 existeTerme2 = existTerme(teU2)
                 if(existeTerme2 != -1) :
                     """On reconnait les deux termes que l'utilisateur à introduit
@@ -679,7 +730,12 @@ def traitement_phrase(message):
                 j = i+5
                 if(isADeterminant(list[j])) :
                     j += 1
-            relation_recherchee = "has_attribute"        
+            relation_recherchee = "has_attribute"
+        elif(list[i+1] == "possède" or list[i+1] == "possede") :
+        	j = i+2
+        	if(isADeterminant(list[j])) :
+        		j += 1
+        	relation_recherchee = "r_own"        
 
 
         else :
@@ -690,8 +746,8 @@ def traitement_phrase(message):
         
         if(compris) :
             #termeU1 = Terme(list[i])
-            teU1 = separateurSymboleTerme(list[i])
-            teU2 = separateurSymboleTerme(list[j])
+            teU1 = list[i]
+            teU2 = list[j]
             print("Vous cherchez une relation {} {} {}".format(teU1,relation_recherchee,teU2))
             existeTerme1 = existTerme(teU1)
             if(existeTerme1 != -1) :
@@ -730,19 +786,19 @@ def traitement_phrase(message):
     		return "je ne sais pas ce qu'est {} ".format(list[i])
 
 
-    elif(separateurSymboleTerme(list[0]) in LIST_BONJOUR) :
+    elif(list[0] in LIST_BONJOUR) :
     	if("?" in list) :
     		list.remove("?")
     	if(len(list)>3) :
     		mess = "{} {} {}".format(list[1],list[2],list[3])
     		if(mess in LIST_CA_VA) :
-    			return "{}, je vais bien merci. {}".format(random.choice(LIST_BONJOUR),random.choice(LIST_QUE_VEUX_TU_SAVOIR)).capitalize()
+    			return "{}, je vais bien merci. ".format(random.choice(LIST_BONJOUR)).capitalize() + "{}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
     	elif(len(list)>2) :
     		mess = "{} {}".format(list[1],list[2])
     		if(mess in LIST_CA_VA) :
-    			return "{}, je vais bien merci. {}".format(random.choice(LIST_BONJOUR),random.choice(LIST_QUE_VEUX_TU_SAVOIR)).capitalize()
+    			return "{}, je vais bien merci. ".format(random.choice(LIST_BONJOUR)).capitalize() + "{}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
     	else :
-    		return random.choice(LIST_BONJOUR).capitalize()
+    		return random.choice(LIST_BONJOUR).capitalize() + "{}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 
 
 

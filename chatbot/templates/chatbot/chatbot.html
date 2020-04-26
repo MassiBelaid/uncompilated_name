@@ -8,8 +8,16 @@
 <form method="GET" action="">
 	<div>
 		<label for="phrase">{{ reponse }} </label>
-		<br>
+		<br/>
+		<br/>
 		<input style ="height: 30px; width: 700px; font-size: 1em; " type="text" name="phrase" id="phrase" required/>
 		<input type="submit" value="Parler">
+	</div>
+	<div>
+		<ul>
+			{% for phr in dialog %}
+    			<li>{{ phr }}</li>
+			{% endfor %}
+		</ul>
 	</div>
 </form>

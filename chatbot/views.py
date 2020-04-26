@@ -53,31 +53,45 @@ def home(request):
 	today = date.today()
 	phrase = request.GET.get('phrase') or ''
 	rav = request.session.get('question')
+	dialog = request.session.get('dialog')
+	if(dialog is None) :
+		dialog = []
 	if (rav is not None) :
 		if(phrase == '') :
 			request.session['question'] = None
-			return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour, je suis Greg. Que veux-tu savoir ?"})
+			return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour, je suis Greg. Que veux-tu savoir ?",'dialog':dialog})
 		else :
+			dialog.insert(0,phrase)
 			reponse = traitement_reponse(rav, phrase)
 			request.session['question'] = None
 			if(type(reponse) == str) :
-				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse})
+				dialog.insert(0,reponse)
+				request.session['dialog'] = dialog
+				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
 			else :
 				request.session['question'] = reponse
 				reponse = construireQuestion (reponse)
-				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse})
+				dialog.insert(0,reponse)
+				request.session['dialog'] = dialog
+				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
 	else :	
 		if(phrase == '') :
-			return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour, je suis Greg. Que veux-tu savoir ?"})
+			request.session['dialog'] = dialog
+			return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour, je suis Greg. Que veux-tu savoir ?",'dialog':dialog})
 		else :
+			dialog.insert(0,phrase)
 			reponse = traitement_phrase(phrase)
 			print("_______________reponse : {} ".format(reponse))
 			if(type(reponse) == str) :
-				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse})
+				dialog.insert(0,reponse)
+				request.session['dialog'] = dialog
+				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
 			else :
 				request.session['question'] = reponse
 				reponse = construireQuestion (reponse)
-				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse})
+				dialog.insert(0,reponse)
+				request.session['dialog'] = dialog
+				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
 
 
 

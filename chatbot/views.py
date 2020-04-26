@@ -18,21 +18,22 @@ OUI_FAIBLE = 30
 NOMBRE_VALIDATION_RELATION = 2
 
 LIST_IS_A = ["est un", "est une sous-classe de", "est un sous-ensemble de", "appartient à la classe de"]
-LIST_HAS_PART = ["est composé de", "est une partie de"]
+LIST_HAS_PART = ["est composé de", "a comme partie"]
 LIST_HAS_ATTRIBUTE = ["peut être qualifié de", "peut avoir comme propriété de","a comme propriété de", "est qualifié de","peut","sait"]
+LIST_OWN = ["possède"]
 
 LIST_QUE_VEUX_TU_SAVOIR = ["Si tu veux savoir autre chose, je t'écoute.", "Si tu as besoin de savoir quelque chose, je t'en prie.", "Si tu as besoin de savoir quelque chose, je t'écoute."]
 
 LIST_OUI_FORT = ["certainement","sûrement","absolument","oui c'est certain","oui c'est sûr"]
 LIST_OUI_FAIBLE = ["en majorité","globalement","probablement","dans beaucoup de cas","pas toujours"]
-LIST_SAIS_PAS = ["peut-être","je ne sais pas", "je sais pas","aucune idée"]
+LIST_SAIS_PAS = ["peut-être","je ne sais pas", "je sais pas","aucune idée","je ne pense pas","je pense pas","je ne suis pas sur","je ne suis pas sûr"]
 LIST_NON_FORT = ["absolument pas","impossible","pas du tout"]
 LIST_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne crois pas"]
 
-LIST_REPONSE_OUI_FORT = ["oui certainement","oui sûrement","oui absolument","oui surement","oui"]
+LIST_REPONSE_OUI_FORT = ["oui certainement","oui sûrement","oui absolument","oui surement","oui","absolument","surement","sûrement","assurément","assurément oui","assurement","assurement oui"]
 LIST_REPONSE_OUI_FAIBLE = ["oui en majorité","oui globalement","oui probablement","oui dans beaucoup de cas","oui en majorite"]
 LIST_REPONSE_SAIS_PAS = ["peut-être","Pas toujours","eventuellement","pas forcément","pas forcement","peut-etre"]
-LIST_REPONSE_NON_FORT = ["absolument pas","impossible","pas du tout","non"]
+LIST_REPONSE_NON_FORT = ["absolument pas","impossible","pas du tout","non","absolument non"]
 LIST_REPONSE_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne crois pas","plutot pas","peut-etre pas"]
 
 LIST_EVIDENT = ["parce que c'est évident", "c'est factuel","parce ce que c'est un fait","c'est évident"]
@@ -70,6 +71,7 @@ def home(request):
 			return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour, je suis Greg. Que veux-tu savoir ?"})
 		else :
 			reponse = traitement_phrase(phrase)
+			print("_______________reponse : {} ".format(reponse))
 			if(type(reponse) == str) :
 				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse})
 			else :
@@ -87,22 +89,18 @@ def extraire(terme) :
 	LIST_ALL6 = extraireJDM(terme,"6")
 	LIST_ALL9 = extraireJDM(terme,"9")
 	LIST_ALL17 = extraireJDM(terme,"17")
+	LIST_ALL121 = extraireJDM(terme,"121")
 
-	LIST_ALL_RELATIONS = LIST_ALL1[1] + LIST_ALL6[1] + LIST_ALL9[1] + LIST_ALL17[1]
-	LIST_ALL_TERMES = LIST_ALL1[0] + LIST_ALL6[0] + LIST_ALL9[0] + LIST_ALL17[0]
+	LIST_ALL_RELATIONS = LIST_ALL1[1] + LIST_ALL6[1] + LIST_ALL9[1] + LIST_ALL17[1] + LIST_ALL121[1]
+	LIST_ALL_TERMES = LIST_ALL1[0] + LIST_ALL6[0] + LIST_ALL9[0] + LIST_ALL17[0] + LIST_ALL121[0]
 
 	idT = LIST_ALL1[2][0]
 
-	for a in LIST_ALL_RELATIONS :
-		print(str(a.terme1.terme) + a.relation + str(a.terme2.terme))
+	#try :
+	Relation.objects.bulk_create(LIST_ALL_RELATIONS, ignore_conflicts = True)
+	#except IntegrityError :
+	#	print("============================================ relation ignorée ")
 
-	#print(LIST_ALL[1])
-
-	Relation.objects.bulk_create(LIST_ALL_RELATIONS)
-	#Terme.objects.bulk_create(LIST_ALL_TERMES)
-
-	
-	print("======================================================================={}".format(idT))
 	return idT
 
 
@@ -174,13 +172,17 @@ def extraireJDM(terme, numRel) :
 						r = "has_part"
 					elif(numRel == "17") :
 						r = "has_attribute"
+					elif(numRel == "121") :
+						r = "own"
 					existeTermBool = Terme.objects.filter(id = casesRelation[3]).exists() and Terme.objects.filter(id = casesRelation[2]).exists() and not Relation.objects.filter(terme1 = Terme.objects.get(id = casesRelation[2]), terme2 = Terme.objects.get(id = casesRelation[3]), relation = r).exists()
 					#print(" ============== ================== == = = = ={}       {}   le terme existe : {}".format(terme, r, existeTermBool))
 					if(existeTermBool):
 						try :
-							LIST_ALL[1].append(Relation(relation = r, source = "JDM", poids = casesRelation[5], terme1 = Terme.objects.get(id = casesRelation[2]), terme2 = Terme.objects.get(id = casesRelation[3])))
-							#print("JENTREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE    {}     {}    {}".format(r,casesRelation[3],casesRelation[2]))
-							#Relation(relation = r, source = "JDM", poids = casesRelation[5], terme1 = Terme.objects.get(id = casesRelation[2]), terme2 = Terme.objects.get(id = casesRelation[3])).save()
+							relationAjoutée = Relation(relation = r, source = "JDM", poids = casesRelation[5], terme1 = Terme.objects.get(id = casesRelation[2]), terme2 = Terme.objects.get(id = casesRelation[3]))
+							if(relationAjoutée not in LIST_ALL[1]) :
+								LIST_ALL[1].append(relationAjoutée)
+								#print("JENTREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE    {}     {}    {}".format(r,casesRelation[3],casesRelation[2]))
+								#Relation(relation = r, source = "JDM", poids = casesRelation[5], terme1 = Terme.objects.get(id = casesRelation[2]), terme2 = Terme.objects.get(id = casesRelation[3])).save()
 						except Exception :
 							print("relation ignored {} =======================================".format(r))
 			return LIST_ALL
@@ -323,6 +325,20 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 								reponse = random.choice(LIST_SAIS_PAS)
 					else :
 						reponse = "{}.".format(random.choice(LIST_SAIS_PAS))
+			elif(relation_recherchee == "own") :
+				list_relation_has_part = Relation.objects.filter(relation = "is_a",terme1 = termeU1)
+				for rel in list_relation_has_part :
+					relation = Relation.objects.filter(terme1 = rel.terme2.id, relation = "own", terme2 = termeU2)
+					if len(relation) > 0:
+						for r in relation :
+							if(r.poids >= OUI_FAIBLE) :
+								reponse = "{} oui.".format(random.choice(LIST_OUI_FORT))
+							elif(r.poids >= SAIS_PAS) :
+								reponse = "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
+							else :
+								reponse = random.choice(LIST_SAIS_PAS)
+					else :
+						reponse = "{}.".format(random.choice(LIST_SAIS_PAS))
 			else:	
 				reponse = "{}.".format(random.choice(LIST_SAIS_PAS))
 			listAverifier = RelationAVerifier.objects.filter(terme1 = termeU1, relation = relation_recherchee, terme2 = termeU2)
@@ -432,6 +448,26 @@ def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 					return "{} ".format(random.choice(LIST_SAIS_PAS))
 			return "has_attribute"
 
+		elif(relation_recherchee == "own") :
+			list_relation_has_part = Relation.objects.filter(relation = "is_a",terme1 = termeU1)
+			for rel in list_relation_has_part :
+				relation = Relation.objects.filter(terme1 = rel.terme2.id, relation = "own", terme2 = termeU2)
+				if len(relation) > 0:
+					for r in relation :
+						if(r.poids >= OUI_FAIBLE) :
+							termeC1 = Terme.objects.get(id = termeU1).terme
+							termeC2 = rel.terme2.terme
+							termeC3 = Terme.objects.get(id = termeU2).terme
+							reponse = "peut être parce que {} est sous-classe de {}, qui possède {} ".format(termeC1,termeC2,termeC3)
+							return reponse
+						elif(r.poids >= SAIS_PAS) :
+							return "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
+						else :
+							return "{}.".format(random.choice(LIST_SAIS_PAS))
+				else :
+					return "{} ".format(random.choice(LIST_SAIS_PAS))
+			return "own"
+
 		else:	
 			return "{} ".format(random.choice(LIST_EVIDENT))
 
@@ -445,19 +481,22 @@ def construireQuestion(rav) :
 		corpMsg = random.choice(LIST_HAS_PART)
 	elif(rav[1] == "has_attribute") :
 		corpMsg = random.choice(LIST_HAS_ATTRIBUTE)
+	elif(rav[1] == "own") :
+		corpMsg = random.choice(LIST_OWN)
 
 	termeUn = Terme.objects.get(id = rav[0]).terme
 	termeDeux = Terme.objects.get(id = rav[2]).terme
-	return "est-ce que {} {} {} ?".format(termeUn, corpMsg, termeDeux)
+	return "est-ce que {} {} {} ?".format(termeUn, corpMsg, termeDeux).capitalize()
 
 
 
 def chercherQuestion() :
 	if(RelationAVerifier.objects.filter().exists()) :
 		rav = RelationAVerifier.objects.order_by('?').first()
-		return [rav.terme1.id, rav.relation, rav.terme2.id]
+		return [rav.terme1.id, rav.relation, rav.terme2.id, "1"]
 	else :
-		return "Je n'ai pas ça en tête pour le moment. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+		rav = Relation.objects.order_by('?').first()
+		return [rav.terme1.id, rav.relation, rav.terme2.id, "2"]
 	
 
 
@@ -465,42 +504,79 @@ def chercherRelationTermeUtilisateur(terme) :
 	idTerme = Terme.objects.filter(terme = terme, raffinement = RAFFINEMENT).first().id
 	if(RelationAVerifier.objects.filter(Q(terme1=idTerme) | Q(terme2=idTerme)).exists()) :
 		rav = RelationAVerifier.objects.filter(Q(terme1=idTerme) | Q(terme2=idTerme)).order_by('?').first()
+		return [rav.terme1.id, rav.relation, rav.terme2.id,"1"]
 	else :
-		return "Je n'ai pas ça en tête pour le moment. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
-	return [rav.terme1.id, rav.relation, rav.terme2.id]
+		rav = Relation.objects.filter(Q(terme1=idTerme) | Q(terme2=idTerme)).order_by('?').first()
+		return [rav.terme1.id, rav.relation, rav.terme2.id,"2"]
+	
 
 
 def traitement_reponse(rav, reponse) :
-	reponse = reponse.lower()
-	if(reponse in LIST_REPONSE_OUI_FORT):
-		poid = OUI_FAIBLE
-		RelationAVerifier.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
-		rep = "D'accord, alors je note que c'est correct. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
-	elif(reponse in LIST_REPONSE_OUI_FAIBLE) :
-		poid = SAIS_PAS
-		RelationAVerifier.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
-		rep = "D'accord, je note ça comme parfois vrai. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
-	elif(reponse in LIST_REPONSE_SAIS_PAS) :
-		poid = NON_FAIBLE
-		RelationAVerifier.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
-		rep = "D'accord, nous sommes donc deux à ne pas savoir. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
-	elif(reponse in LIST_REPONSE_NON_FORT) :
-		poid = NON_FORT - 1
-		RelationAVerifier.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
-		rep = "D'accord, je note que ce n'est absolument pas le cas. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
-	elif(reponse in LIST_REPONSE_NON_FAIBLE) :
-		poid = NON_FORT
-		RelationAVerifier.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
-		rep = "D'accord, je note que ça peut ne pas être le cas. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
-	else :
-		return traitement_phrase(reponse)
+	reponseList = pre_traitement_phrase(reponse)
+	reponse = " ".join(str(elm) for elm in reponseList)
+	if(rav[3] == "1") :
+		if(reponse in LIST_REPONSE_OUI_FORT):
+			poid = OUI_FAIBLE
+			RelationAVerifier.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
+			rep = "D'accord, alors je note que c'est correct. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+		elif(reponse in LIST_REPONSE_OUI_FAIBLE) :
+			poid = SAIS_PAS
+			RelationAVerifier.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
+			rep = "D'accord, je note ça comme parfois vrai. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+		elif(reponse in LIST_REPONSE_SAIS_PAS) :
+			poid = NON_FAIBLE
+			RelationAVerifier.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
+			rep = "D'accord, nous sommes donc deux à ne pas savoir. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+		elif(reponse in LIST_REPONSE_NON_FORT) :
+			poid = NON_FORT - 1
+			RelationAVerifier.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
+			rep = "D'accord, je note que ce n'est absolument pas le cas. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+		elif(reponse in LIST_REPONSE_NON_FAIBLE) :
+			poid = NON_FORT
+			RelationAVerifier.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
+			rep = "D'accord, je note que ça peut ne pas être le cas. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+		else :
+			return traitement_phrase(reponse)
 
-	listRelationAVerifier = RelationAVerifier.objects.filter(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
-	if(len(listRelationAVerifier) >= NOMBRE_VALIDATION_RELATION):
-		Relation.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid,source = "UN")
-		RelationAVerifier.objects.filter(terme1=rav[0],relation = rav[1],terme2=rav[2]).delete()
+		listRelationAVerifier = RelationAVerifier.objects.filter(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid)
+		if(len(listRelationAVerifier) >= NOMBRE_VALIDATION_RELATION):
+			Relation.objects.create(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2]),poids=poid,source = "UN")
+			RelationAVerifier.objects.filter(terme1=rav[0],relation = rav[1],terme2=rav[2]).delete()
 
-	return rep 
+		return rep
+
+
+
+	elif(rav[3] == "2") :
+		relationPosee = Relation.objects.filter(terme1=Terme.objects.get(id=rav[0]),relation = rav[1],terme2=Terme.objects.get(id=rav[2])).first()
+		if(reponse in LIST_REPONSE_OUI_FORT):
+			if(relationPosee.poids <= OUI_FAIBLE) :
+				relationPosee.poids += 15
+			rep = "D'accord, alors je note que c'est correct. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+		elif(reponse in LIST_REPONSE_OUI_FAIBLE) :
+			if(relationPosee.poids >= OUI_FAIBLE) :
+				relationPosee.poids -= 15
+			elif(relationPosee.poids <= SAIS_PAS) :
+				relationPosee.poids += 15
+			rep = "D'accord, je note ça comme parfois vrai. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+		elif(reponse in LIST_REPONSE_SAIS_PAS) :
+			rep = "D'accord, nous sommes donc deux à ne pas savoir. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+		elif(reponse in LIST_REPONSE_NON_FORT) :
+			if(relationPosee.poids >= NON_FORT) :
+				relationPosee.poids -= 15
+			rep = "D'accord, je note que ce n'est absolument pas le cas. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+		elif(reponse in LIST_REPONSE_NON_FAIBLE) :
+			if(relationPosee.poids >= SAIS_PAS) :
+				relationPosee.poids -= 15
+			elif(relationPosee.poids <= NON_FORT) :
+				relationPosee.poids += 15
+			rep = "D'accord, je note que ça peut ne pas être le cas. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+		else :
+			return traitement_phrase(reponse)
+
+		relationPosee.save()
+
+		return rep
 
 
 
@@ -536,7 +612,7 @@ def traitement_phrase(message):
         compris = True
         if((list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and list[i+3] == "sous-classe") or \
             (list[i+1] in LIST_CONJ_APPARTENIR and list[i+2] == "à" and list[i+3] == "la" and list[i+4] == "classe")or \
-            (list[i+1] in LIST_CONJ_ETRE and list[i+2] == "sous-classe") or (list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]))) :
+            (list[i+1] in LIST_CONJ_ETRE and list[i+2] == "sous-classe") or (list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and len(list)<=7)) :
             """ Question du style K est {une/un} sous-classe/appartient à la classe
                 Relation is_a
                 """
@@ -606,7 +682,7 @@ def traitement_phrase(message):
         	j = i+2
         	if(isADeterminant(list[j])) :
         		j += 1
-        	relation_recherchee = "r_own"
+        	relation_recherchee = "own"
 
 
         else :
@@ -735,7 +811,7 @@ def traitement_phrase(message):
         	j = i+2
         	if(isADeterminant(list[j])) :
         		j += 1
-        	relation_recherchee = "r_own"        
+        	relation_recherchee = "own"        
 
 
         else :
@@ -792,13 +868,17 @@ def traitement_phrase(message):
     	if(len(list)>3) :
     		mess = "{} {} {}".format(list[1],list[2],list[3])
     		if(mess in LIST_CA_VA) :
-    			return "{}, je vais bien merci. ".format(random.choice(LIST_BONJOUR)).capitalize() + "{}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+    			return "{}, je vais bien merci. {}".format(random.choice(LIST_BONJOUR).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+    		else :
+    			return "{}. {}".format(random.choice(LIST_BONJOUR).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
     	elif(len(list)>2) :
     		mess = "{} {}".format(list[1],list[2])
     		if(mess in LIST_CA_VA) :
-    			return "{}, je vais bien merci. ".format(random.choice(LIST_BONJOUR)).capitalize() + "{}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+    			return "{}, je vais bien merci. {}".format(random.choice(LIST_BONJOUR).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+    		else :
+    			"{}. {}".format(random.choice(LIST_BONJOUR).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
     	else :
-    		return random.choice(LIST_BONJOUR).capitalize() + "{}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+    		return "{}. {}".format(random.choice(LIST_BONJOUR).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 
 
 

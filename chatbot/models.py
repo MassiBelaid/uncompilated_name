@@ -14,6 +14,8 @@ class Relation(models.Model):
 	terme2 = models.ForeignKey(Terme, related_name='terme2', on_delete = models.CASCADE)
 	source = models.CharField( max_length = 3)
 	poids = models.IntegerField()
+	class Meta:
+		ordering = ["-poids"]
 
 		
 

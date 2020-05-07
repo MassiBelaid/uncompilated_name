@@ -125,85 +125,88 @@ def extraireJDM(terme, numRel) :
 	LIST_ALL = [[],[],[]]
 	idDuTerme = -1
 	termeURL = terme.replace("é","%E9").replace("è","%E8").replace("ê","%EA").replace("à","%E0").replace("ç","%E7").replace("û","%FB")
-	with urllib.request.urlopen("http://www.jeuxdemots.org/rezo-dump.php?gotermsubmit=Chercher&gotermrel={}&rel={}".format(termeURL,numRel)) as url :
-		s = url.read().decode('ISO-8859-1')
-		if("<CODE>" in s):
-			lesTermes = s[s.find("// les noeuds/termes (Entries) : e;eid;'name';type;w;'formated name'") + len("// les noeuds/termes (Entries) : e;eid;'name';type;w;'formated name'"):s.find("// les types de relations (Relation Types) : rt;rtid;'trname';'trgpname';'rthelp'")]
-			lesRelSort = s[s.find("// les relations sortantes : r;rid;node1;node2;type;w") + len("// les relations sortantes : r;rid;node1;node2;type;w"):s.find("// les relations entrantes : r;rid;node1;node2;type;w ")]
-			lesRelEntr = s[s.find("// les relations entrantes : r;rid;node1;node2;type;w ") + len("// les relations entrantes : r;rid;node1;node2;type;w "):s.find("// END")]
-			lesTermesTab = lesTermes.split("\n")
-			lesRelSorTab = lesRelSort.split("\n")
-			lesRelEntrTab = lesRelEntr.split("\n")
-			listTouteRelation = lesRelSorTab + lesRelEntrTab
-			for ligne in lesTermesTab :
-				casesTermes = ligne.split(";")
-					
-				if(len(casesTermes) == 6):
-					if(">" in casesTermes[5] and not("=" in casesTermes[5])) :
-						existTBool = False
-						if(Terme.objects.filter(id = casesTermes[1]).exists()):
-							existTBool = True
-						if(existTBool == False)	:
-							caseDuTerme = casesTermes[5]
-							caseDuTerme = caseDuTerme[1: len(caseDuTerme)-1]
-							if(len(caseDuTerme.split(">")[0]) < 100 and int(casesTermes[4]) > 50 ):
-								try :
-									Terme.objects.create(id = casesTermes[1], terme = caseDuTerme.split(">")[0], raffinement = caseDuTerme.split(">")[1], importe = "0")
-									LIST_ALL[0].append(Terme(id = casesTermes[1], terme = caseDuTerme.split(">")[0], raffinement = caseDuTerme.split(">")[1], importe = "0"))
+	try :
+		with urllib.request.urlopen("http://www.jeuxdemots.org/rezo-dump.php?gotermsubmit=Chercher&gotermrel={}&rel={}".format(termeURL,numRel)) as url :
+			s = url.read().decode('ISO-8859-1')
+			if("<CODE>" in s):
+				lesTermes = s[s.find("// les noeuds/termes (Entries) : e;eid;'name';type;w;'formated name'") + len("// les noeuds/termes (Entries) : e;eid;'name';type;w;'formated name'"):s.find("// les types de relations (Relation Types) : rt;rtid;'trname';'trgpname';'rthelp'")]
+				lesRelSort = s[s.find("// les relations sortantes : r;rid;node1;node2;type;w") + len("// les relations sortantes : r;rid;node1;node2;type;w"):s.find("// les relations entrantes : r;rid;node1;node2;type;w ")]
+				lesRelEntr = s[s.find("// les relations entrantes : r;rid;node1;node2;type;w ") + len("// les relations entrantes : r;rid;node1;node2;type;w "):s.find("// END")]
+				lesTermesTab = lesTermes.split("\n")
+				lesRelSorTab = lesRelSort.split("\n")
+				lesRelEntrTab = lesRelEntr.split("\n")
+				listTouteRelation = lesRelSorTab + lesRelEntrTab
+				for ligne in lesTermesTab :
+					casesTermes = ligne.split(";")
+						
+					if(len(casesTermes) == 6):
+						if(">" in casesTermes[5] and not("=" in casesTermes[5])) :
+							existTBool = False
+							if(Terme.objects.filter(id = casesTermes[1]).exists()):
+								existTBool = True
+							if(existTBool == False)	:
+								caseDuTerme = casesTermes[5]
+								caseDuTerme = caseDuTerme[1: len(caseDuTerme)-1]
+								if(len(caseDuTerme.split(">")[0]) < 100 and int(casesTermes[4]) > 50 ):
+									try :
+										Terme.objects.create(id = casesTermes[1], terme = caseDuTerme.split(">")[0], raffinement = caseDuTerme.split(">")[1], importe = "0")
+										LIST_ALL[0].append(Terme(id = casesTermes[1], terme = caseDuTerme.split(">")[0], raffinement = caseDuTerme.split(">")[1], importe = "0"))
+									except Exception:
+										print("term ignored {} =======================================".format(caseDuTerme))
+									
+					elif(len(casesTermes) == 5 and not("=" in casesTermes[2])) :
+						id = casesTermes[1]
+						caseDuTerme = casesTermes[2]
+						caseDuTerme = caseDuTerme[1: len(caseDuTerme)-1]
+						if(caseDuTerme.lower() == terme and len(caseDuTerme) < 100) :
+							idDuTerme = casesTermes[1]
+							LIST_ALL[2].append(idDuTerme)
+							Terme(id = idDuTerme, terme = caseDuTerme, raffinement = RAFFINEMENT).delete()
+							try :
+								Terme.objects.create(id = idDuTerme, terme = caseDuTerme, raffinement = RAFFINEMENT, importe = "1")
+								LIST_ALL[0].append(Terme(id = idDuTerme, terme = caseDuTerme, raffinement = RAFFINEMENT, importe = "1"))
+							except Exception:
+								print("term ignored {} =======================================".format(caseDuTerme))
+						else :
+							if(not Terme.objects.filter(id = casesTermes[1]).exists() and len(caseDuTerme) < 100 and int(casesTermes[4]) > 50):
+								try :				
+									Terme.objects.create(id = casesTermes[1], terme = caseDuTerme, raffinement = RAFFINEMENT, importe = "0")
+									LIST_ALL[0].append(Terme(id = casesTermes[1], terme = caseDuTerme, raffinement = RAFFINEMENT, importe = "0"))
 								except Exception:
 									print("term ignored {} =======================================".format(caseDuTerme))
 								
-				elif(len(casesTermes) == 5 and not("=" in casesTermes[2])) :
-					id = casesTermes[1]
-					caseDuTerme = casesTermes[2]
-					caseDuTerme = caseDuTerme[1: len(caseDuTerme)-1]
-					if(caseDuTerme.lower() == terme and len(caseDuTerme) < 100) :
-						idDuTerme = casesTermes[1]
-						LIST_ALL[2].append(idDuTerme)
-						Terme(id = idDuTerme, terme = caseDuTerme, raffinement = RAFFINEMENT).delete()
-						try :
-							Terme.objects.create(id = idDuTerme, terme = caseDuTerme, raffinement = RAFFINEMENT, importe = "1")
-							LIST_ALL[0].append(Terme(id = idDuTerme, terme = caseDuTerme, raffinement = RAFFINEMENT, importe = "1"))
-						except Exception:
-							print("term ignored {} =======================================".format(caseDuTerme))
-					else :
-						if(not Terme.objects.filter(id = casesTermes[1]).exists() and len(caseDuTerme) < 100 and int(casesTermes[4]) > 50):
-							try :				
-								Terme.objects.create(id = casesTermes[1], terme = caseDuTerme, raffinement = RAFFINEMENT, importe = "0")
-								LIST_ALL[0].append(Terme(id = casesTermes[1], terme = caseDuTerme, raffinement = RAFFINEMENT, importe = "0"))
-							except Exception:
-								print("term ignored {} =======================================".format(caseDuTerme))
-							
 
-			for ligne in listTouteRelation :
-				casesRelation = ligne.split(";")
-				if(len(casesRelation) == 6):
-					if(numRel == "1") :
-						r = "raff_sem"
-					elif(numRel == "6") :
-						r = "is_a"
-					elif(numRel == "9") :
-						r = "has_part"
-					elif(numRel == "17") :
-						r = "has_attribute"
-					elif(numRel == "121") :
-						r = "own"
-					existeTermBool = Terme.objects.filter(id = casesRelation[3]).exists() and Terme.objects.filter(id = casesRelation[2]).exists() and not Relation.objects.filter(terme1 = Terme.objects.get(id = casesRelation[2]), terme2 = Terme.objects.get(id = casesRelation[3]), relation = r).exists()
-					#print(" ============== ================== == = = = ={}       {}   le terme existe : {}".format(terme, r, existeTermBool))
-					if(existeTermBool and (int(casesRelation[5]) < -4 or int(casesRelation[5]) > 19)):
-						try :
-							relationAjoutée = Relation(relation = r, source = "JDM", poids = casesRelation[5], terme1 = Terme.objects.get(id = casesRelation[2]), terme2 = Terme.objects.get(id = casesRelation[3]))
-							if(relationAjoutée not in LIST_ALL[1]) :
-								LIST_ALL[1].append(relationAjoutée)
-								#print("JENTREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE    {}     {}    {}".format(r,casesRelation[3],casesRelation[2]))
-								#Relation(relation = r, source = "JDM", poids = casesRelation[5], terme1 = Terme.objects.get(id = casesRelation[2]), terme2 = Terme.objects.get(id = casesRelation[3])).save()
-							else :
-								print("RELATION {} {} {} ========= IGNORED".format(casesRelation[2],r,casesRelation[3]))
-						except Exception :
-							print("relation ignored {} =======================================".format(r))
-			return LIST_ALL
-		else :
-			return LIST_ALL
+				for ligne in listTouteRelation :
+					casesRelation = ligne.split(";")
+					if(len(casesRelation) == 6):
+						if(numRel == "1") :
+							r = "raff_sem"
+						elif(numRel == "6") :
+							r = "is_a"
+						elif(numRel == "9") :
+							r = "has_part"
+						elif(numRel == "17") :
+							r = "has_attribute"
+						elif(numRel == "121") :
+							r = "own"
+						existeTermBool = Terme.objects.filter(id = casesRelation[3]).exists() and Terme.objects.filter(id = casesRelation[2]).exists() and not Relation.objects.filter(terme1 = Terme.objects.get(id = casesRelation[2]), terme2 = Terme.objects.get(id = casesRelation[3]), relation = r).exists()
+						#print(" ============== ================== == = = = ={}       {}   le terme existe : {}".format(terme, r, existeTermBool))
+						if(existeTermBool and (int(casesRelation[5]) < -4 or int(casesRelation[5]) > 19)):
+							try :
+								relationAjoutée = Relation(relation = r, source = "JDM", poids = casesRelation[5], terme1 = Terme.objects.get(id = casesRelation[2]), terme2 = Terme.objects.get(id = casesRelation[3]))
+								if(relationAjoutée not in LIST_ALL[1]) :
+									LIST_ALL[1].append(relationAjoutée)
+									#print("JENTREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE    {}     {}    {}".format(r,casesRelation[3],casesRelation[2]))
+									#Relation(relation = r, source = "JDM", poids = casesRelation[5], terme1 = Terme.objects.get(id = casesRelation[2]), terme2 = Terme.objects.get(id = casesRelation[3])).save()
+								else :
+									print("RELATION {} {} {} ========= IGNORED".format(casesRelation[2],r,casesRelation[3]))
+							except Exception :
+								print("relation ignored {} =======================================".format(r))
+				return LIST_ALL
+			else :
+				return LIST_ALL
+	except Exception :
+		print("C CHAUD COMME DIS ALEXY")
 
 		
 

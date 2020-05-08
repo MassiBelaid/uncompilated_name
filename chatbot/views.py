@@ -61,18 +61,38 @@ def home(request):
 			return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour, je suis Greg. Que veux-tu savoir ?",'dialog':dialog})
 		else :
 			dialog.insert(0,phrase)
-			reponse = traitement_reponse(rav, phrase)
-			request.session['question'] = None
-			if(type(reponse) == str) :
-				dialog.insert(0,reponse)
-				request.session['dialog'] = dialog
-				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
+			if(rav[0] == "4"):
+				rav2 = reponse_dialog_raffinement(rav,phrase)
+				if(len(rav2[1]) == 0):
+					request.session['question'] = None
+					rep = rav2[3]
+				else :
+					request.session['question'] = rav2
+					rep = rav2[4]
+					dialog.insert(0,rep)
+					request.session['dialog'] = dialog
+				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':rep,'dialog':dialog})
+
 			else :
-				request.session['question'] = reponse
-				reponse = construireQuestion (reponse)
-				dialog.insert(0,reponse)
-				request.session['dialog'] = dialog
-				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
+				reponse = traitement_reponse(rav, phrase)
+				request.session['question'] = None
+				if(type(reponse) == str) :
+					dialog.insert(0,reponse)
+					request.session['dialog'] = dialog
+					return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
+				else :
+					if(reponse[0] == "4"):
+						liste_retour_raffinement = dialog_raffinement(reponse)
+						request.session['question'] = reponse
+						dialog.insert(0,liste_retour_raffinement[4])
+						request.session['dialog'] = dialog
+						return render(request,'chatbot/chatbot.html',{'date':today,'reponse':liste_retour_raffinement[4],'dialog':dialog})
+					else :
+						request.session['question'] = reponse
+						reponse = construireQuestion (reponse)
+						dialog.insert(0,reponse)
+						request.session['dialog'] = dialog
+						return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
 	else :	
 		if(phrase == '') :
 			request.session['dialog'] = dialog
@@ -86,11 +106,16 @@ def home(request):
 				request.session['dialog'] = dialog
 				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
 			else :
-				request.session['question'] = reponse
-				reponse = construireQuestion (reponse)
-				dialog.insert(0,reponse)
-				request.session['dialog'] = dialog
-				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
+				if(reponse[0] == "4"):
+					liste_retour_raffinement = dialog_raffinement(reponse)
+					request.session['question'] = reponse
+					return render(request,'chatbot/chatbot.html',{'date':today,'reponse':liste_retour_raffinement[4],'dialog':dialog})
+				else :
+					request.session['question'] = reponse
+					reponse = construireQuestion (reponse)
+					dialog.insert(0,reponse)
+					request.session['dialog'] = dialog
+					return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
 
 
 
@@ -220,9 +245,42 @@ def extraireJDM(terme, numRel) :
 
 
 
+def dialog_raffinement(tab_raffinement):
+	nouvelle_liste_retour = []
+	nouvelle_liste_retour.append("4")
+	liste_des_raffinement = tab_raffinement[1]
+	terme_raf_terme = liste_des_raffinement[0]
+	liste_des_raffinement.pop(0)
+	nouvelle_liste_retour.append(liste_des_raffinement)
+	nouvelle_liste_retour.append(tab_raffinement[2])
+	nouvelle_liste_retour.append(tab_raffinement[3])
+	nouvelle_liste_retour.append("veux tu parler de {} ({})".format(tab_raffinement[2],terme_raf_terme))
+	return nouvelle_liste_retour
 
-def view_date(request, jour, mois, annee=2020):
-	return render (request,'chatbot/date.html',locals())
+def reponse_dialog_raffinement(tab_raffinement,reponse) :
+	nouvelle_liste_retour = []
+	nouvelle_liste_retour.append("4")
+	if(reponse in LIST_REPONSE_OUI_FORT):
+		nouvelle_liste_retour.append([])
+		nouvelle_liste_retour.append(tab_raffinement[2])
+		nouvelle_liste_retour.append("alors {}".format(random.choice(LIST_OUI_FORT)))
+		nouvelle_liste_retour.append("alors {}".format(random.choice(LIST_OUI_FORT)))
+		return nouvelle_liste_retour
+	elif(reponse in LIST_REPONSE_NON_FORT):
+		liste_des_raffinement = tab_raffinement[1]
+		terme_raf_terme = liste_des_raffinement[0]
+		liste_des_raffinement.pop(0)
+		nouvelle_liste_retour.append(liste_des_raffinement)
+		nouvelle_liste_retour.append(tab_raffinement[2])
+		nouvelle_liste_retour.append(tab_raffinement[3])
+		nouvelle_liste_retour.append("veux tu parler de {} ({})".format(tab_raffinement[2],terme_raf_terme))
+		return nouvelle_liste_retour
+	else :
+		return traitement_phrase(reponse)
+
+
+
+
 
 
 def toSingular(ter) :
@@ -280,22 +338,37 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 		find = True
 		if (rel.poids < NON_FORT):
 			resultatRaffinement = verif_raffinement(termeU1,relation_recherchee,termeU2)
-			if(resultatRaffinement == 0):
+			if(len(resultatRaffinement) == 0):
 				return random.choice(LIST_NON_FORT)
 			else:
-				return resultatRaffinement
+				liste_des_raf_a_r = []
+				liste_des_raf_a_r.append("4")
+				liste_des_raf_a_r.append(resultatRaffinement)
+				liste_des_raf_a_r.append(Terme.objects.get(id = termeU1).terme)
+				liste_des_raf_a_r.append(random.choice(LIST_NON_FORT))
+				return liste_des_raf_a_r
 		elif(rel.poids < NON_FAIBLE):
 			resultatRaffinement = verif_raffinement(termeU1,relation_recherchee,termeU2)
-			if(resultatRaffinement == 0):
+			if(len(resultatRaffinement) == 0):
 				return random.choice(LIST_NON_FAIBLE)
-			else :
-				return resultatRaffinement
+			else:
+				liste_des_raf_a_r = []
+				liste_des_raf_a_r.append("4")
+				liste_des_raf_a_r.append(resultatRaffinement)
+				liste_des_raf_a_r.append(Terme.objects.get(id = termeU1).terme)
+				liste_des_raf_a_r.append(random.choice(LIST_NON_FAIBLE))
+				return liste_des_raf_a_r
 		elif(rel.poids < SAIS_PAS) :
 			resultatRaffinement = verif_raffinement(termeU1,relation_recherchee,termeU2)
-			if(resultatRaffinement == 0):
+			if(len(resultatRaffinement) == 0):
 				return random.choice(LIST_SAIS_PAS)
-			else :
-				return resultatRaffinement 
+			else:
+				liste_des_raf_a_r = []
+				liste_des_raf_a_r.append("4")
+				liste_des_raf_a_r.append(resultatRaffinement)
+				liste_des_raf_a_r.append(Terme.objects.get(id = termeU1).terme)
+				liste_des_raf_a_r.append(random.choice(LIST_SAIS_PAS))
+				return liste_des_raf_a_r
 		elif(rel.poids < OUI_FAIBLE) :
 			return "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
 		else :
@@ -316,28 +389,34 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 						find = True
 					elif((p1 >= NON_FAIBLE and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FAIBLE)) :
 						resultatRaffinement = verif_raffinement(termeU1,relation_recherchee,termeU2)
-						if(resultatRaffinement == 0):
+						if(len(resultatRaffinement) == 0):
 							reponse = random.choice(LIST_SAIS_PAS)
 							poids = 0
 							find = True
 						else :
-							return resultatRaffinement
+							liste_des_raf_a_r = []
+							liste_des_raf_a_r.append("4")
+							liste_des_raf_a_r.append(resultatRaffinement)
+							liste_des_raf_a_r.append(Terme.objects.get(id = termeU1).terme)
+							liste_des_raf_a_r.append(random.choice(LIST_SAIS_PAS))
+							return liste_des_raf_a_r
 					elif((p1 >= NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FORT)) :
 						resultatRaffinement = verif_raffinement(termeU1,relation_recherchee,termeU2)
-						if(resultatRaffinement == 0):
+						if(len(resultatRaffinement) == 0):
 							reponse = random.choice(LIST_NON_FAIBLE)
 							poids = 0
 							find = True
 						else :
-							return resultatRaffinement
+							liste_des_raf_a_r = []
+							liste_des_raf_a_r.append("4")
+							liste_des_raf_a_r.append(resultatRaffinement)
+							liste_des_raf_a_r.append(Terme.objects.get(id = termeU1).terme)
+							liste_des_raf_a_r.append(random.choice(LIST_NON_FAIBLE))
+							return liste_des_raf_a_r
 					elif((p1 < NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < NON_FORT)) :
-						resultatRaffinement = verif_raffinement(termeU1,relation_recherchee,termeU2)
-						if(resultatRaffinement == 0):
 							reponse = random.choice(LIST_OUI_FORT)
 							poids = 0
 							find = True
-						else :
-							return resultatRaffinement
 					
 		if(find) :
 			if(RelationAVerifier.objects.filter(terme1 = termeU1, relation = relation_recherchee, terme2 = termeU2).exists()) :
@@ -391,10 +470,15 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 						reponse = "{}.".format(random.choice(LIST_SAIS_PAS))
 			else:
 				resultatRaffinement = verif_raffinement(termeU1,relation_recherchee,termeU2)
-				if(resultatRaffinement == 0 ) :
+				if(len(resultatRaffinement) == 0 ) :
 					return "{}.".format(random.choice(LIST_SAIS_PAS))
 				else :
-					return resultatRaffinement
+					liste_des_raf_a_r = []
+					liste_des_raf_a_r.append("4")
+					liste_des_raf_a_r.append(resultatRaffinement)
+					liste_des_raf_a_r.append(Terme.objects.get(id = termeU1).terme)
+					liste_des_raf_a_r.append(random.choice(LIST_SAIS_PAS))
+					return liste_des_raf_a_r
 			listAverifier = RelationAVerifier.objects.filter(terme1 = termeU1, relation = relation_recherchee, terme2 = termeU2)
 			if(len(listAverifier) == 0) :
 				existeTermBool = Terme.objects.filter(id = termeU1).exists() and Terme.objects.filter(id = termeU2).exists()
@@ -537,14 +621,14 @@ def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 
 def verif_raffinement(terme1, r, terme2):
 	print("========================================= JENTREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
-	result = 0
+	result = []
 	terme = Terme.objects.get(id = terme1)
 	listTermesRaffinement = Terme.objects.filter(terme = terme.terme).exclude(raffinement = RAFFINEMENT)
 	for tm in listTermesRaffinement :
 		listRels = Relation.objects.filter(terme1 = tm.id, relation = r, terme2 = terme2)
 		for relat in listRels :
 			if(relat.poids > OUI_FAIBLE):
-				return "{} ({})".format(random.choice(LIST_OUI_FORT), tm.raffinement)
+				result.append(tm.raffinement)
 	return result
 
 

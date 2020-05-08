@@ -104,18 +104,22 @@ def extraire(terme) :
 	LIST_ALL17 = extraireJDM(terme,"17")
 	LIST_ALL121 = extraireJDM(terme,"121")
 
-	LIST_ALL_RELATIONS = LIST_ALL1[1] + LIST_ALL6[1] + LIST_ALL9[1] + LIST_ALL17[1] + LIST_ALL121[1]
-	LIST_ALL_TERMES = LIST_ALL1[0] + LIST_ALL6[0] + LIST_ALL9[0] + LIST_ALL17[0] + LIST_ALL121[0]
 
-	idT = LIST_ALL1[2][0]
+	try :
+		LIST_ALL_RELATIONS = LIST_ALL1[1] + LIST_ALL6[1] + LIST_ALL9[1] + LIST_ALL17[1] + LIST_ALL121[1]
+		LIST_ALL_TERMES = LIST_ALL1[0] + LIST_ALL6[0] + LIST_ALL9[0] + LIST_ALL17[0] + LIST_ALL121[0]
 
-	#try :
-	print("SA taillleeeee oooooooooooooo {}".format(len(LIST_ALL_RELATIONS)))
-	Relation.objects.bulk_create(LIST_ALL_RELATIONS, ignore_conflicts = True)
-	#except IntegrityError :
-	#	print("============================================ relation ignorée ")
+		idT = LIST_ALL1[2][0]
 
-	return idT
+		#try :
+		print("SA taillleeeee oooooooooooooo {}".format(len(LIST_ALL_RELATIONS)))
+		Relation.objects.bulk_create(LIST_ALL_RELATIONS, ignore_conflicts = True)
+		#except IntegrityError :
+		#	print("============================================ relation ignorée ")
+
+		return idT
+	except Exception :
+		return -1
 
 
 
@@ -207,6 +211,7 @@ def extraireJDM(terme, numRel) :
 				return LIST_ALL
 	except Exception :
 		print("C CHAUD COMME DIS ALEXY")
+		return LIST_ALL
 
 		
 
@@ -255,7 +260,7 @@ def separateurSymboleTerme(mot) :
 def existTerme(ter) :
     idTerme = -1
     if(Terme.objects.filter(terme = ter, raffinement = RAFFINEMENT, importe = "1").exists()) :
-    	termeBDDl = Terme.objects.get(terme = ter, importe = "1", raffinement = RAFFINEMENT)
+    	termeBDDl = Terme.objects.filter(terme = ter, importe = "1", raffinement = RAFFINEMENT).first()
     	idTerme = termeBDDl.id
     	print("__________________________________" + str(idTerme))
     if(idTerme == -1) :
@@ -744,6 +749,8 @@ def traitement_phrase(message):
                 """Question du style K est composé de....
                     """
                 j = i+4
+                if("de" not in list):
+                	j -= 1
                 if (isADeterminant(list[j])):
                     j += 1
             else :
@@ -1020,9 +1027,71 @@ def traitement_phrase(message):
 
 
 
-LIST_TERMES_A_EXTRAIRE = ["angle","armoire","banc","bureau","cabinet","carreau","chaise","classe","clé","coin","couloir","dossier","eau","école","écriture","entrée","escalier","étagère","étude","extérieur","fenêtre","intérieur","lavabo","lecture","lit","marche","matelas","maternelle","meuble","mousse","mur","peluche","placard","plafond","porte","portemanteau","poubelle","radiateur","rampe","récréation","rentrée","rideau","robinet","salle","savon","serrure","serviette","siège","sieste","silence","sol","sommeil","sonnette","sortie","table","tableau","tabouret","tapis","tiroir","toilette","vitre","absent","assis","bas","couché","haut","présent","crayon","stylo","feutre","taille-crayon","pointe","mine","gomme","dessin","coloriage","rayure","peinture","pinceau","couleur","craie","papier","feuille","cahier","carnet","carton","ciseaux","découpage","pliage","pli","colle","affaire","boîte","casier","caisse","trousse","cartable","jouet","jeu","pion","dé","domino","puzzle","cube","perle","chose","forme : carré","rond","pâte à modeler","tampon","livre","histoire","bibliothèque","image","album","titre","bande dessinée","conte","dictionnaire","magazine","catalogue","page","ligne","mot","enveloppe","étiquette","étiquette","alphabet","appareil","caméscope","cassette","cédé","cédérom","chaîne","chanson","chiffre","contraire","différence","doigt","écran","écriture","film","fois","idée","instrument","intrus","lettre","liste","magnétoscope","main","micro","modèle","musique","nom","nombre","orchestre","ordinateur","photo","point","poster","pouce","prénom","question","radio","sens","tambour","télécommande","téléphone","télévision","trait","trompette","voix","xylophone","zéro","ami","attention","camarade","colère","copain","coquin","dame","directeur","directrice","droit","effort","élève","enfant","fatigue","faute","fille","garçon","gardien","madame","maître","maîtresse","mensonge","ordre","personne","retard","sourire","travail","blond","brun","calme","curieux","différent","doux","énervé","gentil","grand","handicapé","inséparable","jaloux","moyen","muet","noir","nouveau","petit","poli","propre","roux","sage","sale","sérieux","sourd","tranquille","arrosoir","assiette","balle","bateau","boîte","bouchon","bouteille","bulles","canard","casserole","cuillère","cuvette","douche","entonnoir","gouttes","litre","moulin","pluie","poisson","pont","pot","roue","saladier","seau","tablier","tasse","trous","verre","amusant","chaud","froid","humide","intéressant","mouillé","sec","transparent","à l’endroit","à l’envers","anorak","arc","bagage","baguette","barbe","bonnet","botte","bouton","bretelle","cagoule","casque","casquette","ceinture","chapeau","chaussette","chausson","chaussure","chemise","cigarette","col","collant","couronne","cravate","culotte","écharpe","épée","fée","flèche","fusil","gant","habit","jean","jupe","lacet","laine","linge","lunettes","magicien","magie","maillot","manche","manteau","mouchoir","moufle","nœud","paire","pantalon","pied","poche","prince","pull-over","pyjama","reine","robe","roi","ruban","semelle","soldat","sorcière","tache","taille","talon","tissu","tricot","uniforme","valise","veste","vêtement","clair","court","étroit","foncé","joli","large","long","multicolore","nu","usé","aiguille","ampoule","avion","bois","bout","bricolage","bruit","cabane","carton","clou","colle","crochet","élastique","ficelle","fil","marionnette","marteau","métal","mètre","morceau","moteur","objet","outil","peinture","pinceau","planche","plâtre","scie","tournevis","vis","voiture","véhicule","adroit","difficile","dur","facile","lisse","maladroit","pointu","rugueux","tordu","accident","aéroport","auto","camion","engin","feu","frein","fusée","garage","gare","grue","hélicoptère","moto","panne","parking","pilote","pneu","quai","train","virage","vitesse","voyage","wagon","zigzag","abîmé","ancien","blanc","bleu","cassé","cinq","dernier","deux","deuxième","dix","gris","gros","huit","jaune","même","neuf","pareil","premier","quatre","rouge","sept","seul","six","solide","trois","troisième","un","vert","acrobate","arrêt","arrière","barre","barreau","bord","bras","cerceau","chaises","cheville","chute","cœur","corde","corps","côté","cou","coude","cuisse","danger","doigts","dos","échasses","échelle","épaule","équipe","escabeau","fesse","filet","fond","genou","gymnastique","hanche","jambes","jeu","mains","milieu","montagne","mur d’escalade","muscle","numéro","ongle","parcours","pas","passerelle","pente","peur","pieds","plongeoir","poignet","poing","pont de singe","poutre d’équilibre","prises","rivière des crocodiles","roulade","saut","serpent","sport","suivant","tête","toboggan","tour","trampoline","tunnel","ventre","dangereux","épais","fort","gauche","groupé","immobile","rond","serré","souple","bagarre","balançoire","ballon","bande","bicyclette","bille","cadenas","cage à écureuil","cerf-volant","château","coup","cour","course","échasse","flaque","paix","pardon","partie","pédale","pelle","pompe","préau","raquette","rayon","récréation","sable","sifflet","signe","tas","tricycle","tuyau","vélo","filet","allumette","anniversaire","appétit","beurre","coquille","crêpes","croûte","dessert","envie","faim","fève","four","galette","gâteau","goût","invitation","langue","lèvres","liquide","louche","mie","moitié","moule","odeur","œuf","part","pâte","pâtisserie","recette","rouleau","sel","soif","tarte","tranche","yaourt","barbouillé","demi","égal","entier","gourmand","mauvais","meilleur","mince","bassine","cocotte","épluchure","légume","pomme de terre","rondelle","soupe","consommé","potage","cru","cuit","vide","arête","frite","gobelet","jambon","os","poulet","purée","radis","restaurant","sole","animal","bébés","bouche","cage","câlin","caresse","cochon d’Inde","foin","graines","hamster","lapin","maison","nez","œil","oreille","patte","toit","yeux","abandonné","enceinte","maigre","mort","né","vivant","légume","abeille","agneau","aile","âne","arbre","bain","barque","bassin","bébé","bec","bête","bœuf","botte de foin","boue","bouquet","bourgeon","branche","caillou","campagne","car","champ","chariot","chat","cheminée","cheval","chèvre","chien","cochon","colline","coq","coquelicot","crapaud","cygne","départ","dindon","escargot","étang","ferme","fermier","feuille","flamme","fleur","fontaine","fumée","grain","graine","grenouille","griffe","guêpe","herbe","hérisson","insecte","jardin","mare","marguerite","miel","morceau de pain","mouche","mouton","oie","oiseau","pierre","pigeon","plante","plume","poney","poule","poussin","prairie","rat","rivière","route","tortue","tracteur","tulipe","vache","vétérinaire","bizarre","énorme","immense","malade","nain","utile","aigle","animaux","aquarium","bêtes","cerf","chouette","cigogne","crocodile","dauphin","éléphant","girafe","hibou","hippopotame","kangourou","lion","loup","ours","panda","panthère","perroquet","phoque","renard","requin","rhinocéros","singe","tigre","zèbre","zoo","épingle","bâton","bêtise","bonhomme","bottes","canne","cauchemar","cri","danse","déguisement","dinosaure","drapeau","en argent","en or","en rang","fête","figure","géant","gens","grand-mère","grand-père","joie","joue","journaux","maquillage","masque","monsieur","moustache","ogre","princesse","rue","trottoir","content","drôle","effrayé","heureux","joyeux","prêt","riche","terrible","Noël","boule","cadeau","canne à pêche","chance","cube","guirlande","humeur","papillon","spectacle","surprise","trou","visage","électrique","âge","an","année","après-midi","calendrier","début","dimanche","été","étoile","fin","heure des mamans","heure","hiver","horloge","jeudi","jour","journée","lumière","lundi","lune","mardi","matin","mercredi","midi","minuit","minute","mois","moment","montre","nuit","ombre","pendule","retour","réveil","saison","samedi","semaine","soir","soleil","temps","univers","vacances","vendredi","aîné","jeune","lent","patient","rapide","sombre","vieux","air","arc-en-ciel","brouillard","ciel","éclair","flocon","goutte","hirondelle","luge","neige","nuage","orage","ouragan","parapluie","parasol","ski","tempête","thermomètre","tonnerre","traîneau","vent","déçu","triste","chaud","froid","pluvieux","nuageux","humide","gelé","instable","changeant","assiette","balai","biscuit","boisson","bol","bonbon","céréale","confiture","coquetier","couteau","couvercle","couvert","cuillère","cuisine","cuisinière","désordre","dînette","éponge","évier","four","fourchette","lait","lave-linge","lessive","machine","nappe","pain","pile","plat","plateau","poêle","réfrigérateur","repas","tartine","torchon","vaisselle","bon","creux","délicieux","argent","aspirateur","bague","barrette","bijou","bracelet","brosse","cadre","canapé","chambre","cheveu","chiffon","cil","coffre","coffret","collier","couette","coussin","couverture","dent","dentifrice","drap","fauteuil","fer à repasser","frange","glace","lampe","lit","ménage","or","oreiller","parfum","peigne","pouf","poupée","poussette","poussière","shampoing","sourcil","trésor","tube","vase","beau","belle","confortable","coquet","douillet","adulte","album","amour","baiser","bavoir","biberon","bisou","caprice","cimetière","cousin","cousine","crèche","fils","frère","grand-parent","homme","femme","jumeau","maman","mari","mariage","mère","papa","parent","père","petit-enfant","petit-fils","petite-fille","rasoir","sœur","ambulance","bosse","champignon","dentiste","docteur","fièvre","front","gorge","infirmier","infirmière","jambe","larme","médecin","menton","mine","ordonnance","pansement","peau","piqûre","poison","sang","santé","squelette","trousse","guéri","pâle","araignée","brouette","chenille","coccinelle","fourmi","herbe","jonquille","lézard","pâquerette","rangée","râteau","rosé","souris","taupe","terrain","terre","terrier","tige","ver","mûr","profond","portière","sac","billet","caisse","farce","grimace","grotte","pays","regard","ticket","cruel","bûche","buisson","camp","chasseur","châtaigne","chemin","chêne","corbeau","écorce","écureuil","forêt","gourde","lac","loupe","lutin","marron","mûre","moustique","muguet","nid","paysage","pin","rocher","sapin","sommet","tente","adresse","appartement","ascenseur","balcon","boucherie","boulanger","boulangerie","boutique","bus","caniveau","caravane","carrefour","cave","charcuterie","cinéma","cirque","clin d’œil","cloche","clocher","clown","coiffeur","colis-route","courrier","croix","église","embouteillage","endroit","enveloppe","essence","facteur","fleuriste","foire","hôpital","hôtel","immeuble","incendie","laisse","magasin","manège","médicament","moineau","monde","monument","ouvrier","palais","panneau","paquet","parc","passage","pharmacie","pharmacien","piscine","place","police","policier","pompier","poste","promenade","quartier","square","timbre","travaux","usine","village","ville","voisin","volet","important","impossible","prudent","abricot","ail","aliment","ananas","banane","bifteck","café","carotte","cerise","chocolat","chou","citron","citrouille","clémentine","concombre","coquillage","corbeille","crabe","crevette","endive","farine","fraise","framboise","fromage","fruit","gâteau","haricot","huile","légume","marchand","melon","monnaie","navet","noisette","noix","nourriture","oignon","orange","panier","pâtes","pêche","persil","petit pois","poire","poireau","pomme","pomme de terre","prix","prune","queue","raisin","riz","salade","sucre","thé","tomate","viande","vin","cher","léger","lourd","plein","baleine","bouée","île","jumelles","marin","mer","mouette","navire","pêcheur","plage","poisson","port","sardine","serviette","vague","voile"]
+LIST_TERMES_A_EXTRAIRE = ["angle","armoire","banc","bureau","cabinet","carreau","chaise","classe","clé","coin","couloir","dossier","eau","école","écriture","entrée","escalier","étagère","étude",
+"extérieur","fenêtre","intérieur","lavabo","lecture","lit","marche","matelas","maternelle","meuble","mousse","mur","peluche","placard","plafond","porte","portemanteau","poubelle","radiateur",
+"rampe","récréation","rentrée","rideau","robinet","salle","savon","serrure","serviette","siège","sieste","silence","sol","sommeil","sonnette","sortie","table","tableau","tabouret","tapis",
+"tiroir","toilette","vitre","absent","assis","bas","couché","haut","présent","crayon","stylo","feutre","taille-crayon","pointe","mine","gomme","dessin","coloriage","rayure","peinture","pinceau",
+"couleur","craie","papier","feuille","cahier","carnet","carton","ciseaux","découpage","pliage","pli","colle","affaire","boîte","casier","caisse","trousse","cartable","jouet","jeu","pion","dé",
+"domino","puzzle","cube","perle","chose","forme : carré","rond","pâte à modeler","tampon","livre","histoire","bibliothèque","image","album","titre","bande dessinée","conte","dictionnaire",
+"magazine","catalogue","page","ligne","mot","enveloppe","étiquette","étiquette","alphabet","appareil","caméscope","cassette","cédé","cédérom","chaîne","chanson","chiffre","contraire","différence",
+"doigt","écran","écriture","film","fois","idée","instrument","intrus","lettre","liste","magnétoscope","main","micro","modèle","musique","nom","nombre","orchestre","ordinateur","photo","point",
+"poster","pouce","prénom","question","radio","sens","tambour","télécommande","téléphone","télévision","trait","trompette","voix","xylophone","zéro","ami","attention","camarade","colère","copain",
+"coquin","dame","directeur","directrice","droit","effort","élève","enfant","fatigue","faute","fille","garçon","gardien","madame","maître","maîtresse","mensonge","ordre","personne","retard",
+"sourire","travail","blond","brun","calme","curieux","différent","doux","énervé","gentil","grand","handicapé","inséparable","jaloux","moyen","muet","noir","nouveau","petit","poli","propre",
+"roux","sage","sale","sérieux","sourd","tranquille","arrosoir","assiette","balle","bateau","boîte","bouchon","bouteille","bulles","canard","casserole","cuillère","cuvette","douche","entonnoir",
+"gouttes","litre","moulin","pluie","poisson","pont","pot","roue","saladier","seau","tablier","tasse","trous","verre","amusant","chaud","froid","humide","intéressant","mouillé","sec","transparent",
+"à l’endroit","à l’envers","anorak","arc","bagage","baguette","barbe","bonnet","botte","bouton","bretelle","cagoule","casque","casquette","ceinture","chapeau","chaussette","chausson","chaussure",
+"chemise","cigarette","col","collant","couronne","cravate","culotte","écharpe","épée","fée","flèche","fusil","gant","habit","jean","jupe","lacet","laine","linge","lunettes","magicien","magie",
+"maillot","manche","manteau","mouchoir","moufle","nœud","paire","pantalon","pied","poche","prince","pull-over","pyjama","reine","robe","roi","ruban","semelle","soldat","sorcière","tache","taille",
+"talon","tissu","tricot","uniforme","valise","veste","vêtement","clair","court","étroit","foncé","joli","large","long","multicolore","nu","usé","aiguille","ampoule","avion","bois","bout",
+"bricolage","bruit","cabane","carton","clou","colle","crochet","élastique","ficelle","fil","marionnette","marteau","métal","mètre","morceau","moteur","objet","outil","peinture","pinceau",
+"planche","plâtre","scie","tournevis","vis","voiture","véhicule","adroit","difficile","dur","facile","lisse","maladroit","pointu","rugueux","tordu","accident","aéroport","auto","camion","engin",
+"feu","frein","fusée","garage","gare","grue","hélicoptère","moto","panne","parking","pilote","pneu","quai","train","virage","vitesse","voyage","wagon","zigzag","abîmé","ancien","blanc","bleu",
+"cassé","cinq","dernier","deux","deuxième","dix","gris","gros","huit","jaune","même","neuf","pareil","premier","quatre","rouge","sept","seul","six","solide","trois","troisième","un","vert",
+"acrobate","arrêt","arrière","barre","barreau","bord","bras","cerceau","chaises","cheville","chute","cœur","corde","corps","côté","cou","coude","cuisse","danger","doigts","dos","échasses",
+"échelle","épaule","équipe","escabeau","fesse","filet","fond","genou","gymnastique","hanche","jambes","jeu","mains","milieu","montagne","mur d’escalade","muscle","numéro","ongle","parcours",
+"pas","passerelle","pente","peur","pieds","plongeoir","poignet","poing","pont de singe","poutre d’équilibre","prises","rivière des crocodiles","roulade","saut","serpent","sport","suivant","tête",
+"toboggan","tour","trampoline","tunnel","ventre","dangereux","épais","fort","gauche","groupé","immobile","rond","serré","souple","bagarre","balançoire","ballon","bande","bicyclette","bille",
+"cadenas","cage à écureuil","cerf-volant","château","coup","cour","course","échasse","flaque","paix","pardon","partie","pédale","pelle","pompe","préau","raquette","rayon","récréation","sable",
+"sifflet","signe","tas","tricycle","tuyau","vélo","filet","allumette","anniversaire","appétit","beurre","coquille","crêpes","croûte","dessert","envie","faim","fève","four","galette","gâteau",
+"goût","invitation","langue","lèvres","liquide","louche","mie","moitié","moule","odeur","œuf","part","pâte","pâtisserie","recette","rouleau","sel","soif","tarte","tranche","yaourt","barbouillé",
+"demi","égal","entier","gourmand","mauvais","meilleur","mince","bassine","cocotte","épluchure","légume","pomme de terre","rondelle","soupe","consommé","potage","cru","cuit","vide","arête","frite",
+"gobelet","jambon","os","poulet","purée","radis","restaurant","sole","animal","bébés","bouche","cage","câlin","caresse","cochon d’Inde","foin","graines","hamster","lapin","maison","nez","œil",
+"oreille","patte","toit","yeux","abandonné","enceinte","maigre","mort","né","vivant","légume","abeille","agneau","aile","âne","arbre","bain","barque","bassin","bébé","bec","bête","bœuf",
+"botte de foin","boue","bouquet","bourgeon","branche","caillou","campagne","car","champ","chariot","chat","cheminée","cheval","chèvre","chien","cochon","colline","coq","coquelicot","crapaud",
+"cygne","départ","dindon","escargot","étang","ferme","fermier","feuille","flamme","fleur","fontaine","fumée","grain","graine","grenouille","griffe","guêpe","herbe","hérisson","insecte","jardin",
+"mare","marguerite","miel","morceau de pain","mouche","mouton","oie","oiseau","pierre","pigeon","plante","plume","poney","poule","poussin","prairie","rat","rivière","route","tortue","tracteur",
+"tulipe","vache","vétérinaire","bizarre","énorme","immense","malade","nain","utile","aigle","animaux","aquarium","bêtes","cerf","chouette","cigogne","crocodile","dauphin","éléphant","girafe",
+"hibou","hippopotame","kangourou","lion","loup","ours","panda","panthère","perroquet","phoque","renard","requin","rhinocéros","singe","tigre","zèbre","zoo","épingle","bâton","bêtise","bonhomme",
+"bottes","canne","cauchemar","cri","danse","déguisement","dinosaure","drapeau","en argent","en or","en rang","fête","figure","géant","gens","grand-mère","grand-père","joie","joue","journaux",
+"maquillage","masque","monsieur","moustache","ogre","princesse","rue","trottoir","content","drôle","effrayé","heureux","joyeux","prêt","riche","terrible","Noël","boule","cadeau","canne à pêche",
+"chance","cube","guirlande","humeur","papillon","spectacle","surprise","trou","visage","électrique","âge","an","année","après-midi","calendrier","début","dimanche","été","étoile","fin",
+"heure des mamans","heure","hiver","horloge","jeudi","jour","journée","lumière","lundi","lune","mardi","matin","mercredi","midi","minuit","minute","mois","moment","montre","nuit","ombre",
+"pendule","retour","réveil","saison","samedi","semaine","soir","soleil","temps","univers","vacances","vendredi","aîné","jeune","lent","patient","rapide","sombre","vieux","air","arc-en-ciel",
+"brouillard","ciel","éclair","flocon","goutte","hirondelle","luge","neige","nuage","orage","ouragan","parapluie","parasol","ski","tempête","thermomètre","tonnerre","traîneau","vent","déçu",
+"triste","chaud","froid","pluvieux","nuageux","humide","gelé","instable","changeant","assiette","balai","biscuit","boisson","bol","bonbon","céréale","confiture","coquetier","couteau","couvercle",
+"couvert","cuillère","cuisine","cuisinière","désordre","dînette","éponge","évier","four","fourchette","lait","lave-linge","lessive","machine","nappe","pain","pile","plat","plateau","poêle",
+"réfrigérateur","repas","tartine","torchon","vaisselle","bon","creux","délicieux","argent","aspirateur","bague","barrette","bijou","bracelet","brosse","cadre","canapé","chambre","cheveu","chiffon",
+"cil","coffre","coffret","collier","couette","coussin","couverture","dent","dentifrice","drap","fauteuil","fer à repasser","frange","glace","lampe","lit","ménage","or","oreiller","parfum","peigne",
+"pouf","poupée","poussette","poussière","shampoing","sourcil","trésor","tube","vase","beau","belle","confortable","coquet","douillet","adulte","album","amour","baiser","bavoir","biberon","bisou",
+"caprice","cimetière","cousin","cousine","crèche","fils","frère","grand-parent","homme","femme","jumeau","maman","mari","mariage","mère","papa","parent","père","petit-enfant","petit-fils",
+"petite-fille","rasoir","sœur","ambulance","bosse","champignon","dentiste","docteur","fièvre","front","gorge","infirmier","infirmière","jambe","larme","médecin","menton","mine","ordonnance",
+"pansement","peau","piqûre","poison","sang","santé","squelette","trousse","guéri","pâle","araignée","brouette","chenille","coccinelle","fourmi","herbe","jonquille","lézard","pâquerette","rangée",
+"râteau","rosé","souris","taupe","terrain","terre","terrier","tige","ver","mûr","profond","portière","sac","billet","caisse","farce","grimace","grotte","pays","regard","ticket","cruel","bûche",
+"buisson","camp","chasseur","châtaigne","chemin","chêne","corbeau","écorce","écureuil","forêt","gourde","lac","loupe","lutin","marron","mûre","moustique","muguet","nid","paysage","pin","rocher",
+"sapin","sommet","tente","adresse","appartement","ascenseur","balcon","boucherie","boulanger","boulangerie","boutique","bus","caniveau","caravane","carrefour","cave","charcuterie","cinéma",
+"cirque","clin d’œil","cloche","clocher","clown","coiffeur","colis-route","courrier","croix","église","embouteillage","endroit","enveloppe","essence","facteur","fleuriste","foire","hôpital",
+"hôtel","immeuble","incendie","laisse","magasin","manège","médicament","moineau","monde","monument","ouvrier","palais","panneau","paquet","parc","passage","pharmacie","pharmacien","piscine",
+"place","police","policier","pompier","poste","promenade","quartier","square","timbre","travaux","usine","village","ville","voisin","volet","important","impossible","prudent","abricot","ail",
+"aliment","ananas","banane","bifteck","café","carotte","cerise","chocolat","chou","citron","citrouille","clémentine","concombre","coquillage","corbeille","crabe","crevette","endive","farine",
+"fraise","framboise","fromage","fruit","gâteau","haricot","huile","légume","marchand","melon","monnaie","navet","noisette","noix","nourriture","oignon","orange","panier","pâtes","pêche","persil",
+"petit pois","poire","poireau","pomme","pomme de terre","prix","prune","queue","raisin","riz","salade","sucre","thé","tomate","viande","vin","cher","léger","lourd","plein","baleine","bouée","île",
+"jumelles","marin","mer","mouette","navire","pêcheur","plage","poisson","port","sardine","serviette","vague","voile"]
 def extraction(request) :
 	for terme_a_ext in LIST_TERMES_A_EXTRAIRE :
-		extraire(terme_a_ext)
-	return render(request,'chatbot/chatbot.html',{'date':'today', 'reponse':"Bonjour, je suis Greg. Que veux-tu savoir ?"})
+		nbTermes = 0
+		i = existTerme(terme_a_ext)
+		if(i > -1) :
+			nbTermes +=1
+	return render(request,'chatbot/extraction.html',{'nbTermes': nbTermes})
 

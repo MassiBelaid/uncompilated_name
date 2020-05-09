@@ -19,7 +19,7 @@ NOMBRE_VALIDATION_RELATION = 2
 
 LIST_IS_A = ["est un", "est une sous-classe de", "est un sous-ensemble de", "appartient à la classe de"]
 LIST_HAS_PART = ["est composé de", "a comme partie"]
-LIST_HAS_ATTRIBUTE = ["peut être qualifié de", "peut avoir comme propriété de","a comme propriété de", "est qualifié de","peut","sait"]
+LIST_HAS_ATTRIBUTE = ["peut être qualifié de", "peut avoir comme propriété","a comme propriété"]
 LIST_OWN = ["possède"]
 
 LIST_QUE_VEUX_TU_SAVOIR = ["Si tu veux savoir autre chose, je t'écoute.", "Si tu as besoin de savoir quelque chose, je t'en prie.", "Si tu as besoin de savoir quelque chose, je t'écoute."]
@@ -33,7 +33,7 @@ LIST_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne crois pas"
 
 LIST_REPONSE_OUI_FORT = ["oui certainement","oui sûrement","oui absolument","oui surement","oui","absolument","surement","sûrement","assurément","assurément oui","assurement","assurement oui","bah oui","ben oui"]
 LIST_REPONSE_OUI_FAIBLE = ["oui en majorité","oui globalement","oui probablement","oui dans beaucoup de cas","oui en majorite","eventuellement"]
-LIST_REPONSE_SAIS_PAS = ["peut-être","peut etre", "peut être","pas toujours","pas forcément","pas forcement","peut-etre","je ne suis pas sur","je ne suis pas sûr","je ne crois pas","je crois pas","je ne pense pas","je pense pas"]
+LIST_REPONSE_SAIS_PAS = ["peut-être","peut etre", "peut être","pas toujours","pas forcément","pas forcement","peut-etre","je ne suis pas sur","je ne suis pas sûr","je ne crois pas","je crois pas","je ne pense pas","je pense pas","je sais pas","je ne sais pas"]
 LIST_REPONSE_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne crois pas","plutot pas","peut-etre pas"]
 LIST_REPONSE_NON_FORT = ["absolument pas","impossible","pas du tout","non","absolument non"]
 
@@ -43,13 +43,14 @@ LIST_DETERMINANT = ["un","une","des","la","le","les"]
 LIST_ALORS = ["alors","du coup","de ce fait","par conséquent","donc"]
 LIST_BONJOUR = ["salut","bonjour","coucou","hello","bonsoir","hey"]
 LIST_CA_VA = ["ça va", "sa va", "ca va", "comment vas-tu", "comment allez-vous","comment vas tu", "comment allez vous", "comment ça va", "comment ca va"]
+LIST_PARLE = ["parle","parlez","parlons","parles"]
 
 LIST_CONJ_ETRE = ["est","sont"]
 LIST_CONJ_APPARTENIR = ["appartient","appartiennent"]
 
 RAFFINEMENT = "nul0"
 
-
+LIST_MOT_A_EVITER = ["ton","ta","tes","sa","ses","son","de","des","le","les","la","à","a",",",";","!",":","?","un","une"]
 
 
 def home(request):
@@ -67,15 +68,20 @@ def home(request):
 			dialog.insert(0,phrase)
 			if(rav[0] == "4"):
 				rav2 = reponse_dialog_raffinement(rav,phrase,request)
-				if(len(rav2[1]) == 0):
-					request.session['question'] = None
-					rep = rav2[3]
-				else :
-					request.session['question'] = rav2
-					rep = rav2[4]
-					dialog.insert(0,rep)
+				if(type(rav2) == str):
+					dialog.insert(0,rav2)
 					request.session['dialog'] = dialog
-				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':rep,'dialog':dialog})
+					return render(request,'chatbot/chatbot.html',{'date':today,'reponse':rav2,'dialog':dialog})
+				else :
+					if(len(rav2[1]) == 0):
+						request.session['question'] = None
+						rep = rav2[3]
+					else :
+						request.session['question'] = rav2
+						rep = rav2[4]
+						dialog.insert(0,rep)
+						request.session['dialog'] = dialog
+					return render(request,'chatbot/chatbot.html',{'date':today,'reponse':rep,'dialog':dialog})
 
 			else :
 				reponse = traitement_reponse(rav, phrase,request)
@@ -232,7 +238,7 @@ def extraireJDM(terme, numRel) :
 							r = "own"
 						existeTermBool = Terme.objects.filter(id = casesRelation[3]).exists() and Terme.objects.filter(id = casesRelation[2]).exists() and not Relation.objects.filter(terme1 = Terme.objects.get(id = casesRelation[2]), terme2 = Terme.objects.get(id = casesRelation[3]), relation = r).exists()
 						#print(" ============== ================== == = = = ={}       {}   le terme existe : {}".format(terme, r, existeTermBool))
-						if(existeTermBool and (int(casesRelation[5]) < -4 or int(casesRelation[5]) > 19)):
+						if(existeTermBool and (int(casesRelation[5]) < -4 or int(casesRelation[5]) > 4)):
 							try :
 								relationAjoutée = Relation(relation = r, source = "JDM", poids = casesRelation[5], terme1 = Terme.objects.get(id = casesRelation[2]), terme2 = Terme.objects.get(id = casesRelation[3]))
 								if(relationAjoutée not in LIST_ALL[1]) :
@@ -299,21 +305,9 @@ def reponse_dialog_raffinement(tab_raffinement,reponse,request = None) :
 		nouvelle_liste_retour.append("veux tu parler de {} ({})".format(tab_raffinement[2],terme_raf_terme))
 		return nouvelle_liste_retour
 	else :
+		request.session['question'] = None
 		return traitement_phrase(reponse,request)
 
-
-
-
-
-
-
-
-def toSingular(ter) :
-	#A REVOIR / INUTILE AVEC JDM
-	motSing = Relation.objects.filter(terme1= ter, relation = "plur")
-	for m in motSing :
-		ter = m.terme2
-	return ter
 
 
 
@@ -327,6 +321,15 @@ def isADeterminant(det):
 	else :
 		return False
 
+
+
+
+
+def isAMotAEviter(mot):
+	if(mot in LIST_MOT_A_EVITER) :
+		return True
+	else :
+		return False
 
 
 
@@ -383,40 +386,40 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 		if (rel.poids < NON_FORT):
 			resultatRaffinement = verif_raffinement(termeU1,relation_recherchee,termeU2)
 			if(len(resultatRaffinement) == 0):
-				return "{}. {}".format(random.choice(LIST_NON_FORT),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+				return "{}. {}".format(random.choice(LIST_NON_FORT).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 			else:
 				liste_des_raf_a_r = []
 				liste_des_raf_a_r.append("4")
 				liste_des_raf_a_r.append(resultatRaffinement)
 				liste_des_raf_a_r.append(Terme.objects.get(id = termeU1).terme)
-				liste_des_raf_a_r.append("{}, {}. {}".format(random.choice(LIST_ALORS),random.choice(LIST_NON_FORT).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR)))
+				liste_des_raf_a_r.append("{}, {}. {}".format(random.choice(LIST_ALORS).capitalize(),random.choice(LIST_NON_FORT),random.choice(LIST_QUE_VEUX_TU_SAVOIR)))
 				return liste_des_raf_a_r
 		elif(rel.poids < NON_FAIBLE):
 			resultatRaffinement = verif_raffinement(termeU1,relation_recherchee,termeU2)
 			if(len(resultatRaffinement) == 0):
-				return "{}. {}".format(random.choice(LIST_NON_FAIBLE),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+				return "{}. {}".format(random.choice(LIST_NON_FAIBLE).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 			else:
 				liste_des_raf_a_r = []
 				liste_des_raf_a_r.append("4")
 				liste_des_raf_a_r.append(resultatRaffinement)
 				liste_des_raf_a_r.append(Terme.objects.get(id = termeU1).terme)
-				liste_des_raf_a_r.append("{}, {}. {}".format(random.choice(LIST_ALORS),random.choice(LIST_NON_FAIBLE).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR)))
+				liste_des_raf_a_r.append("{}, {}. {}".format(random.choice(LIST_ALORS).capitalize(),random.choice(LIST_NON_FAIBLE),random.choice(LIST_QUE_VEUX_TU_SAVOIR)))
 				return liste_des_raf_a_r
 		elif(rel.poids < SAIS_PAS) :
 			resultatRaffinement = verif_raffinement(termeU1,relation_recherchee,termeU2)
 			if(len(resultatRaffinement) == 0):
-				return "{}. {}".format(random.choice(LIST_SAIS_PAS),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+				return "{}. {}".format(random.choice(LIST_SAIS_PAS).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 			else:
 				liste_des_raf_a_r = []
 				liste_des_raf_a_r.append("4")
 				liste_des_raf_a_r.append(resultatRaffinement)
 				liste_des_raf_a_r.append(Terme.objects.get(id = termeU1).terme)
-				liste_des_raf_a_r.append("{}, {}. {}".format(random.choice(LIST_ALORS),random.choice(LIST_SAIS_PAS).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR)))
+				liste_des_raf_a_r.append("{}, {}. {}".format(random.choice(LIST_ALORS).capitalize(),random.choice(LIST_SAIS_PAS),random.choice(LIST_QUE_VEUX_TU_SAVOIR)))
 				return liste_des_raf_a_r
 		elif(rel.poids < OUI_FAIBLE) :
-			return "{}. {}".format(random.choice(LIST_OUI_FAIBLE),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+			return "{}. {}".format(random.choice(LIST_OUI_FAIBLE).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 		else :
-			return "{}. {}".format(random.choice(LIST_OUI_FORT),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+			return "{}. {}".format(random.choice(LIST_OUI_FORT).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 	if(find == False) :
 		listRelations = Relation.objects.filter(terme1= termeU1, relation = relation_recherchee)
 		for rel in listRelations :
@@ -434,7 +437,7 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 					elif((p1 >= NON_FAIBLE and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FAIBLE)) :
 						resultatRaffinement = verif_raffinement(termeU1,relation_recherchee,termeU2)
 						if(len(resultatRaffinement) == 0):
-							reponse = "{}. {}".format(random.choice(LIST_SAIS_PAS),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+							reponse = "{}. {}".format(random.choice(LIST_SAIS_PAS).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 							poids = 0
 							find = True
 						else :
@@ -442,12 +445,12 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 							liste_des_raf_a_r.append("4")
 							liste_des_raf_a_r.append(resultatRaffinement)
 							liste_des_raf_a_r.append(Terme.objects.get(id = termeU1).terme)
-							liste_des_raf_a_r.append("{}, {}. {}".format(random.choice(LIST_ALORS),random.choice(LIST_SAIS_PAS).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR)))
+							liste_des_raf_a_r.append("{}, {}. {}".format(random.choice(LIST_ALORS).capitalize(),random.choice(LIST_SAIS_PAS),random.choice(LIST_QUE_VEUX_TU_SAVOIR)))
 							return liste_des_raf_a_r
 					elif((p1 >= NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 >= NON_FORT)) :
 						resultatRaffinement = verif_raffinement(termeU1,relation_recherchee,termeU2)
 						if(len(resultatRaffinement) == 0):
-							reponse = "{}. {}".format(random.choice(LIST_NON_FAIBLE),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+							reponse = "{}. {}".format(random.choice(LIST_NON_FAIBLE).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 							poids = 0
 							find = True
 						else :
@@ -455,13 +458,14 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 							liste_des_raf_a_r.append("4")
 							liste_des_raf_a_r.append(resultatRaffinement)
 							liste_des_raf_a_r.append(Terme.objects.get(id = termeU1).terme)
-							liste_des_raf_a_r.append("{}, {}. {}".format(random.choice(LIST_ALORS),random.choice(LIST_NON_FAIBLE).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR)))
+							liste_des_raf_a_r.append("{}, {}. {}".format(random.choice(LIST_ALORS).capitalize(),random.choice(LIST_NON_FAIBLE),random.choice(LIST_QUE_VEUX_TU_SAVOIR)))
 							return liste_des_raf_a_r
 					elif((p1 < NON_FORT and p2 >=OUI_FAIBLE) or (p1 >= OUI_FAIBLE and p2 < NON_FORT)) :
-							reponse = "{}. {}".format(random.choice(LIST_OUI_FORT),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+							reponse = "{}. {}".format(random.choice(LIST_OUI_FORT).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 							poids = 0
 							find = True
 					
+
 		if(find) :
 			if(RelationAVerifier.objects.filter(terme1 = termeU1, relation = relation_recherchee, terme2 = termeU2).exists()) :
 				if(Terme.objects.filter(id = termeU1).exists() and Terme.objects.filter(id = termeU2).exists()):
@@ -469,7 +473,9 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 				
 			return reponse
 		else :
-			reponse = random.choice(LIST_SAIS_PAS)
+			reponse = "{}. {}".format(random.choice(LIST_SAIS_PAS).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+
+
 			if(relation_recherchee == "has_part"):
 				list_relation_has_part = Relation.objects.filter(relation = "is_a",terme1 = termeU1)
 				for rel in list_relation_has_part :
@@ -483,7 +489,9 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 							else :
 								reponse = "{}. {}".format(random.choice(LIST_SAIS_PAS).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 					else :
-						reponse = "{}. {}".format(random.choice(LIST_SAIS_PAS),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+						reponse = "{}. {}".format(random.choice(LIST_SAIS_PAS).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+
+
 			elif(relation_recherchee == "has_attribute") :
 				list_relation_has_part = Relation.objects.filter(relation = "is_a",terme1 = termeU1)
 				for rel in list_relation_has_part :
@@ -491,13 +499,15 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 					if len(relation) > 0:
 						for r in relation :
 							if(r.poids >= OUI_FAIBLE) :
-								reponse = "{} oui.".format(random.choice(LIST_OUI_FORT))
+								reponse = "{}. {}".format(random.choice(LIST_OUI_FORT).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 							elif(r.poids >= SAIS_PAS) :
-								reponse = "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
+								reponse = "{}. {}".format(random.choice(LIST_OUI_FAIBLE).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 							else :
-								reponse = random.choice(LIST_SAIS_PAS)
+								reponse = "{}. {}".format(random.choice(LIST_SAIS_PAS).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 					else :
-						reponse = "{}.".format(random.choice(LIST_SAIS_PAS))
+						reponse = "{}. {}".format(random.choice(LIST_SAIS_PAS).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+
+
 			elif(relation_recherchee == "own") :
 				list_relation_has_part = Relation.objects.filter(relation = "is_a",terme1 = termeU1)
 				for rel in list_relation_has_part :
@@ -505,23 +515,23 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 					if len(relation) > 0:
 						for r in relation :
 							if(r.poids >= OUI_FAIBLE) :
-								reponse = "{} oui.".format(random.choice(LIST_OUI_FORT))
+								reponse = "{}. {}".format(random.choice(LIST_OUI_FORT).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 							elif(r.poids >= SAIS_PAS) :
-								reponse = "{} oui.".format(random.choice(LIST_OUI_FAIBLE))
+								reponse = "{}. {}".format(random.choice(LIST_OUI_FAIBLE).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 							else :
-								reponse = random.choice(LIST_SAIS_PAS)
+								reponse = "{}. {}".format(random.choice(LIST_SAIS_PAS).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 					else :
-						reponse = "{}.".format(random.choice(LIST_SAIS_PAS))
+						reponse = "{}. {}".format(random.choice(LIST_SAIS_PAS).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 			else:
 				resultatRaffinement = verif_raffinement(termeU1,relation_recherchee,termeU2)
 				if(len(resultatRaffinement) == 0 ) :
-					return "{}.".format(random.choice(LIST_SAIS_PAS))
+					return "{}. {}".format(random.choice(LIST_SAIS_PAS).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 				else :
 					liste_des_raf_a_r = []
 					liste_des_raf_a_r.append("4")
 					liste_des_raf_a_r.append(resultatRaffinement)
 					liste_des_raf_a_r.append(Terme.objects.get(id = termeU1).terme)
-					liste_des_raf_a_r.append(random.choice(LIST_SAIS_PAS))
+					liste_des_raf_a_r.append("{}. {}".format(random.choice(LIST_SAIS_PAS).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR)))
 					return liste_des_raf_a_r
 			listAverifier = RelationAVerifier.objects.filter(terme1 = termeU1, relation = relation_recherchee, terme2 = termeU2)
 			if(len(listAverifier) == 0) :
@@ -605,6 +615,7 @@ def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 
 	if(find == False) :
 		return "{}. {}".format(random.choice(LIST_SAIS_PAS).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+
 	else :
 		if(relation_recherchee == "has_part"):
 			list_relation_has_part = Relation.objects.filter(relation = "is_a",terme1 = termeU1)
@@ -616,13 +627,13 @@ def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 							termeC1 = Terme.objects.get(id = termeU1).termee
 							termeC2 = rel.terme2.terme
 							termeC3 = Terme.objects.get(id = termeU2).terme
-							reponse = "Peut être parce que {} est sous-classe de {}, qui est composé de {}. {}".format(termeC1,termeC2,termeC3,random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+							reponse = "Peut être parce que {} est une sous-classe de {}, qui est composé de {}. {}".format(termeC1,termeC2,termeC3,random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 							return reponse
 						elif(r.poids >= SAIS_PAS) :
 							termeC1 = Terme.objects.get(id = termeU1).termee
 							termeC2 = rel.terme2.terme
 							termeC3 = Terme.objects.get(id = termeU2).terme
-							reponse = "Peut être parce que {} est sous-classe de {}, qui est composé de {}. {}".format(termeC1,termeC2,termeC3,random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+							reponse = "Peut être parce que {} est une sous-classe de {}, qui est composé de {}. {}".format(termeC1,termeC2,termeC3,random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 							return reponse
 
 
@@ -637,13 +648,13 @@ def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 							termeC1 = Terme.objects.get(id = termeU1).terme
 							termeC2 = rel.terme2.terme
 							termeC3 = Terme.objects.get(id = termeU2).terme
-							reponse = "Peut être parce que {} est sous-classe de {}, qui possède comme propriété {}. {}".format(termeC1,termeC2,termeC3,random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+							reponse = "Peut être parce que {} est une sous-classe de {}, qui possède comme propriété {}. {}".format(termeC1,termeC2,termeC3,random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 							return reponse
 						elif(r.poids >= SAIS_PAS) :
 							termeC1 = Terme.objects.get(id = termeU1).terme
 							termeC2 = rel.terme2.terme
 							termeC3 = Terme.objects.get(id = termeU2).terme
-							reponse = "Peut être parce que {} est sous-classe de {}, qui possède comme propriété {}. {}".format(termeC1,termeC2,termeC3,random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+							reponse = "Peut être parce que {} est une sous-classe de {}, qui possède comme propriété {}. {}".format(termeC1,termeC2,termeC3,random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 							return reponse
 						
 
@@ -657,14 +668,16 @@ def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 							termeC1 = Terme.objects.get(id = termeU1).terme
 							termeC2 = rel.terme2.terme
 							termeC3 = Terme.objects.get(id = termeU2).terme
-							reponse = "Peut être parce que {} est sous-classe de {}, qui possède {}. {}".format(termeC1,termeC2,termeC3,random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+							reponse = "Peut être parce que {} est une sous-classe de {}, qui possède {}. {}".format(termeC1,termeC2,termeC3,random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 							return reponse
 						elif(r.poids >= SAIS_PAS) :
 							termeC1 = Terme.objects.get(id = termeU1).terme
 							termeC2 = rel.terme2.terme
 							termeC3 = Terme.objects.get(id = termeU2).terme
-							reponse = "Peut être parce que {} est sous-classe de {}, qui possède {}. {}".format(termeC1,termeC2,termeC3,random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+							reponse = "Peut être parce que {} est une sous-classe de {}, qui possède {}. {}".format(termeC1,termeC2,termeC3,random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 							return reponse	
+
+
 		return "{}. {}".format(random.choice(LIST_EVIDENT).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 
 
@@ -682,7 +695,7 @@ def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 
 
 def verif_raffinement(terme1, r, terme2):
-	print("========================================= JENTREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
+	print("========================================= JENTREEEEEEEEEEEEEEEEEEEEEEEEEEEEEE dans verif raffinement")
 	result = []
 	terme = Terme.objects.get(id = terme1)
 	listTermesRaffinement = Terme.objects.filter(terme = terme.terme).exclude(raffinement = RAFFINEMENT)
@@ -877,322 +890,348 @@ def pre_traitement_phrase(message):
 def traitement_phrase(message,request = None):
     list = pre_traitement_phrase(message)
     print(list)
-    
-    if(list[0] == "est-ce" and list[1][0] == "q" and list[1][1] == "u"):
-        """ Question du style est-ce qu.......
-                """
-        
-        if (isADeterminant(list[2])) :
-            """ phrase du style est-ce que un/une .........
-                """
-            i = 3
-        else :
-            """ phrase du style est-ce que/qu'une/qu'un .....
-                """
-            i = 2    
 
-        compris = True
-        if((list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and list[i+3] == "sous-classe") or \
-            (list[i+1] in LIST_CONJ_APPARTENIR and list[i+2] == "à" and list[i+3] == "la" and list[i+4] == "classe")or \
-            (list[i+1] in LIST_CONJ_ETRE and list[i+2] == "sous-classe") or (list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and len(list)<=7)) :
-            """ Question du style K est {une/un} sous-classe/appartient à la classe
-                Relation is_a
-                """
-
-            if(list[i+1] in LIST_CONJ_ETRE and (list[i+2] == "sous-classe" or list[i+3] == "sous-classe")) :
-                """Question formulée de la premiére façon
-                    """
-                j = i+5
-                if (isADeterminant(list[i+2]) == False):
-                    """est sous-classe
-                        """
-                    j -= 1
-            elif(list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2])):
-            	j = i+3
-
-            else :
-                """Question formulée de la deuxiemme façon
-                    """
-                j = i+6
-            if(isADeterminant(list[j])) :
-                j += 1    
-
-            relation_recherchee = "is_a"            
+    try :
 
 
+	    if(list[0] == "est-ce" and list[1][0] == "q" and list[1][1] == "u"):
+	        """ Question du style est-ce qu.......
+	                """
+	        
+	        if (isAMotAEviter(list[2])) :
+	            """ phrase du style est-ce que un/une .........
+	                """
+	            i = 3
+	        else :
+	            """ phrase du style est-ce que/qu'une/qu'un .....
+	                """
+	            i = 2    
 
-        elif((list[i+1] in LIST_CONJ_ETRE and list[i+2] == "composé") or \
-            (list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and list[i+3] == "partie")) :
-            """Question du style K est composé/ est une partie ......
-                Relation has_part
-                """
-            if(list[i+2] == "composé") :
-                """Question du style K est composé de....
-                    """
-                j = i+4
-                if("de" not in list):
-                	j -= 1
-                if (isADeterminant(list[j])):
-                    j += 1
-            else :
-                """Question du style K' est une partie de .....
-                    """        
-                j = i+5
-                if (isADeterminant(list[j])):
-                    j += 1
-                if(list[j][len(list[j])-1] == '?'):
-                	list[j] = list[j][0:len(list[j])-1]
-                (i,j) = (j,i)    
-            relation_recherchee = "has_part"
+	        compris = True
+	        if((list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and list[i+3] == "sous-classe") or \
+	            (list[i+1] in LIST_CONJ_APPARTENIR and list[i+2] == "à" and list[i+3] == "la" and list[i+4] == "classe")or \
+	            (list[i+1] in LIST_CONJ_ETRE and list[i+2] == "sous-classe") or (list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and len(list)<=7)) :
+	            """ Question du style K est {une/un} sous-classe/appartient à la classe
+	                Relation is_a
+	                """
 
-        
-        elif(list[i+1]=="peut" and (list[i+2] == "etre" or list[i+2] == "être") and not(re.search(list[i+3], r"qualifiée?") is None) or \
-            (list[i+1]=="peut" and list[i+2]=="avoir" and list[i+3]=="comme" and list[i+4]=="propriété")):
-            """Question du style K peut etre qualifié(e)/ peut avoir comme propriété .....
-                Relation has-attribute
-                """
-            if(list[i+2] == "avoir") :
-                """Question peut avoir comme propriété .....
-                    """
-                j = i+5
-            else :
-                """Question peut etre qualifié(e)
-                    """
-                j = i+5
-            if(isADeterminant(list[j])) :
-                j += 1
-            relation_recherchee = "has_attribute"
-        elif(list[i+1] == "possède" or list[i+1] == "possede") :
-        	j = i+2
-        	if(isADeterminant(list[j])) :
-        		j += 1
-        	relation_recherchee = "own"
+	            if(list[i+1] in LIST_CONJ_ETRE and (list[i+2] == "sous-classe" or list[i+3] == "sous-classe")) :
+	                """Question formulée de la premiére façon
+	                    """
+	                j = i+5
+	                if (isADeterminant(list[i+2]) == False):
+	                    """est sous-classe
+	                        """
+	                    j -= 1
+	            elif(list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2])):
+	            	j = i+3
 
+	            else :
+	                """Question formulée de la deuxiemme façon
+	                    """
+	                j = i+6
+	            if(isAMotAEviter(list[j])) :
+	                j += 1    
 
-        else :
-            """Question non comprise
-                """
-            return "Je ne comprends pas votre question"
-            compris = False   
-        
-        if(compris) :
-            print("Vous cherchez une relation {} {} {}".format(list[i],relation_recherchee,list[j]))
-            #termeU1 = Terme(list[i])
-            teU1 = list[i]
-            existeTerme1 = existTerme(teU1)
-            if(existeTerme1 != -1) :
-                #termeU2 = Terme(list[j])
-                teU2 = list[j]
-                existeTerme2 = existTerme(teU2)
-                if(existeTerme2 != -1) :
-                    """On reconnait les deux termes que l'utilisateur à introduit
-                    On cherche si la relation entre les deux existe """
-
-                    print("Je connais les deux termes")
-                    #print(searchRelation(teU1,relation_recherchee,teU2))
-                    return searchRelation(existeTerme1,relation_recherchee,existeTerme2)
-                else :
-                    """Le deuxiemme Terme est inconnu
-                        """
-                    return "Je ne connais pas ce qu'est {}".format(teU2)       
-            else :
-                """Le Premier Terme est inconnu
-                    """
-                return "Je ne connais pas ce qu'est {}".format(list[i])
+	            relation_recherchee = "is_a"            
 
 
 
 
+	        elif((list[i+1] in LIST_CONJ_ETRE and list[i+2] == "composé") or \
+	            (list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and list[i+3] == "partie")) :
+	            """Question du style K est composé/ est une partie ......
+	                Relation has_part
+	                """
+	            if(list[i+2] == "composé") :
+	                """Question du style K est composé de....
+	                    """
+	                j = i+4
+	                if (isAMotAEviter(list[j])):
+	                    j += 1
+	            else :
+	                """Question du style K' est une partie de .....
+	                    """        
+	                j = i+5
+	                if (isAMotAEviter(list[j])):
+	                    j += 1
+	                if(list[j][len(list[j])-1] == '?'):
+	                	list[j] = list[j][0:len(list[j])-1]
+	                (i,j) = (j,i)    
+	            relation_recherchee = "has_part"
 
 
 
-    elif(list[0] == "pourquoi") :
-    	#Question du style Pourquoi ... ?
+	        
+	        elif(list[i+1]=="peut" and (list[i+2] == "etre" or list[i+2] == "être") and not(re.search(list[i+3], r"qualifiée?") is None) or \
+	            (list[i+1]=="peut" and list[i+2]=="avoir" and list[i+3]=="comme" and list[i+4]=="propriété")):
+	            """Question du style K peut etre qualifié(e)/ peut avoir comme propriété .....
+	                Relation has-attribute
+	                """
+	            if(list[i+2] == "avoir") :
+	                """Question peut avoir comme propriété .....
+	                    """
+	                j = i+5
+	            else :
+	                """Question peut etre qualifié(e)
+	                    """
+	                j = i+5
+	            if(isAMotAEviter(list[j])) :
+	                j += 1
+	            relation_recherchee = "has_attribute"
 
 
+	        elif(list[i+1] == "possède" or list[i+1] == "possede" or list[i+1] == "possedent" or list[i+1] == "possèdent") :
+	        	j = i+2
+	        	if(isAMotAEviter(list[j])) :
+	        		j += 1
+	        	relation_recherchee = "own"
 
-        if (list[1] == "est-ce" and list[2] == "que") :
-            """ phrase du style est-ce que un/une .........
-                """
-            i = 3
-        else :
-            """ phrase du style est-ce que/qu'une/qu'un .....
-                """
-            i = 1 
+	        else :
+	            """Question non comprise
+	                """
+	            return "Je ne comprends pas votre question"
+	            compris = False   
+	        
 
-        if(isADeterminant(list[i])) :
-        	i += 1   
+	        if(compris) :
+	            print("Vous cherchez une relation {} {} {}".format(list[i],relation_recherchee,list[j]))
+	            #termeU1 = Terme(list[i])
+	            teU1 = list[i]
+	            existeTerme1 = existTerme(teU1)
+	            if(existeTerme1 != -1) :
+	                #termeU2 = Terme(list[j])
+	                teU2 = list[j]
+	                existeTerme2 = existTerme(teU2)
+	                if(existeTerme2 != -1) :
+	                    """On reconnait les deux termes que l'utilisateur à introduit
+	                    On cherche si la relation entre les deux existe """
 
-        compris = True
-        if((list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and list[i+3] == "sous-classe") or \
-            (list[i+1] in LIST_CONJ_APPARTENIR and list[i+2] == "à" and list[i+3] == "la" and list[i+4] == "classe")or \
-            (list[i+1] in LIST_CONJ_ETRE and list[i+2] == "sous-classe") or (list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]))) :
-            """ Question du style K est {une/un} sous-classe/appartient à la classe
-                Relation is_a
-                """
-
-            if(list[i+1] in LIST_CONJ_ETRE and (list[i+2] == "sous-classe" or list[i+3] == "sous-classe")) :
-                """Question formulée de la premiére façon
-                    """
-                j = i+5
-                if (isADeterminant(list[i+2])):
-                    """est sous-classe
-                        """
-                    j -= 1
-            elif(list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2])):
-            	j = i+3
-            else :
-                """Question formulée de la deuxiemme façon
-                    """
-                j = i+6
-            if(isADeterminant(list[j])) :
-                j += 1    
-
-            relation_recherchee = "is_a"            
-
-
-
-
-        elif((list[i+1] in LIST_CONJ_ETRE and list[i+2] == "composé") or \
-            (list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and list[i+3] == "partie")) :
-            """Question du style K est composé/ est une partie ......
-                Relation has_part
-                """
-            if(list[i+2] == "composé") :
-                """Question du style K est composé de....
-                    """
-                j = i+4
-                if (isADeterminant(list[j])):
-                    j += 1
-            else :
-                """Question du style K' est une partie de .....
-                    """        
-                j = i+5
-                if (isADeterminant(list[j])):
-                    j += 1
-                if(list[j][len(list[j])-1] == '?'):
-                	list[j] = list[j][0:len(list[j])-1]
-                (i,j) = (j,i)    
-            relation_recherchee = "has_part"
-
-
-
-        
-        elif((list[i+1]=="peut" or list[i+1]=="peuvent") and (list[i+2] == "etre" or list[i+2] == "être") and not(re.search(list[i+3], r"qualifiée?s?") is None) or \
-            ((list[i+1]=="peut" or list[i+1]=="peuvent") and list[i+2]=="avoir" and list[i+3]=="comme" and list[i+4]=="propriété") or \
-            ((list[i+1]=="a" or list[i+1]=="ont") and list[i+2]=="comme" and list[i+3]=="propriété")):
-            """Question du style K peut etre qualifié(e) / peut avoir comme propriété / a comme propritété .....
-                Relation has-attribute
-                """
-            if(list[i+2] == "avoir") :
-                """Question peut avoir comme propriété .....
-                    """
-                j = i+5
-            elif(list[i+2] == "être" or list[i+2] == "etre") :
-                """Question peut etre qualifié(e)
-                    """
-                j = i+5
-                if(isADeterminant(list[j]) or list[j] == "de") :
-                    j += 1
-            elif(list[i+2] == "comme") :
-            	j = i+4
-            	if(isADeterminant(list[j]) or list[j] == "de") :
-            		j += 1
-            relation_recherchee = "has_attribute"
+	                    print("Je connais les deux termes")
+	                    #print(searchRelation(teU1,relation_recherchee,teU2))
+	                    return searchRelation(existeTerme1,relation_recherchee,existeTerme2)
+	                else :
+	                    """Le deuxiemme Terme est inconnu
+	                        """
+	                    return "Je ne connais pas ce qu'est {}".format(teU2)       
+	            else :
+	                """Le Premier Terme est inconnu
+	                    """
+	                return "Je ne connais pas ce qu'est {}".format(list[i])
 
 
 
 
 
-        elif(list[i+1] == "possède" or list[i+1] == "possede") :
-        	j = i+2
-        	if(isADeterminant(list[j])) :
-        		j += 1
-        	relation_recherchee = "own"        
+
+
+	    elif(list[0] == "pourquoi") :
+	    	#Question du style Pourquoi ... ?
+
+
+
+	        if (list[1] == "est-ce" and list[2] == "que") :
+	            """ phrase du style est-ce que un/une .........
+	                """
+	            i = 3
+	        else :
+	            """ phrase du style est-ce que/qu'une/qu'un .....
+	                """
+	            i = 1 
+
+	        if(isAMotAEviter(list[i])) :
+	        	i += 1   
+
+	        compris = True
+	        if((list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and list[i+3] == "sous-classe") or \
+	            (list[i+1] in LIST_CONJ_APPARTENIR and list[i+2] == "à" and list[i+3] == "la" and list[i+4] == "classe")or \
+	            (list[i+1] in LIST_CONJ_ETRE and list[i+2] == "sous-classe") or (list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]))) :
+	            """ Question du style K est {une/un} sous-classe/appartient à la classe
+	                Relation is_a
+	                """
+
+	            if(list[i+1] in LIST_CONJ_ETRE and (list[i+2] == "sous-classe" or list[i+3] == "sous-classe")) :
+	                """Question formulée de la premiére façon
+	                    """
+	                j = i+5
+	                if (isADeterminant(list[i+2])):
+	                    """est sous-classe
+	                        """
+	                    j -= 1
+	            elif(list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2])):
+	            	j = i+3
+	            else :
+	                """Question formulée de la deuxiemme façon
+	                    """
+	                j = i+6
+	            if(isAMotAEviter(list[j])) :
+	                j += 1    
+
+	            relation_recherchee = "is_a"            
 
 
 
 
-        else :
-            """Question non comprise
-                """
-            return "Je ne comprends pas votre question"
-            compris = False   
-        
 
-
-        if(compris) :
-            #termeU1 = Terme(list[i])
-            teU1 = list[i]
-            teU2 = list[j]
-            print("Vous cherchez une relation {} {} {}".format(teU1,relation_recherchee,teU2))
-            existeTerme1 = existTerme(teU1)
-            if(existeTerme1 != -1) :
-                #termeU2 = Terme(list[j])
-                existeTerme2 = existTerme(teU2)
-                if(existeTerme2 != -1) :
-                    """On reconnait les deux termes que l'utilisateur à introduit
-                    On cherche si la relation entre les deux existe """
-
-                    print("Je connais les deux termes")
-                    return searchRelationPourquoi(existeTerme1,relation_recherchee,existeTerme2)
-                else :
-                    """Le deuxiemme Terme est inconnu
-                        """
-                    return "Je ne connais pas ce qu'est {}".format(teU2)       
-            else :
-                """Le Premier Terme est inconnu
-                    """
-                return "Je ne connais pas ce qu'est {}".format(teU1)
+	        elif((list[i+1] in LIST_CONJ_ETRE and list[i+2] == "composé") or \
+	            (list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and list[i+3] == "partie")) :
+	            """Question du style K est composé/ est une partie ......
+	                Relation has_part
+	                """
+	            if(list[i+2] == "composé") :
+	                """Question du style K est composé de....
+	                    """
+	                j = i+4
+	                if (isAMotAEviter(list[j])):
+	                    j += 1
+	            else :
+	                """Question du style K' est une partie de .....
+	                    """        
+	                j = i+5
+	                if (isAMotAEviter(list[j])):
+	                    j += 1
+	                if(list[j][len(list[j])-1] == '?'):
+	                	list[j] = list[j][0:len(list[j])-1]
+	                (i,j) = (j,i)    
+	            relation_recherchee = "has_part"
 
 
 
-    elif ((list[0] == "posez" or list[0] == "pose") and ("question" in list or "questions" in list)):
-    	return chercherQuestion()
+
+	        
+	        elif((list[i+1]=="peut" or list[i+1]=="peuvent") and (list[i+2] == "etre" or list[i+2] == "être") and not(re.search(list[i+3], r"qualifiée?s?") is None) or \
+	            ((list[i+1]=="peut" or list[i+1]=="peuvent") and list[i+2]=="avoir" and list[i+3]=="comme" and list[i+4]=="propriété") or \
+	            ((list[i+1]=="a" or list[i+1]=="ont") and list[i+2]=="comme" and list[i+3]=="propriété")):
+	            """Question du style K peut etre qualifié(e) / peut avoir comme propriété / a comme propritété .....
+	                Relation has-attribute
+	                """
+	            if(list[i+2] == "avoir") :
+	                """Question peut avoir comme propriété .....
+	                    """
+	                j = i+5
+	            elif(list[i+2] == "être" or list[i+2] == "etre") :
+	                """Question peut etre qualifié(e)
+	                    """
+	                j = i+5
+	                if(isAMotAEviter(list[j]) or list[j] == "de") :
+	                    j += 1
+	            elif(list[i+2] == "comme") :
+	            	j = i+4
+	            	if(isAMotAEviter(list[j]) or list[j] == "de") :
+	            		j += 1
+	            relation_recherchee = "has_attribute"
 
 
 
-    elif((list[0] == "parle" and list[1] == "moi" and list[2] == "de") or (list[0] == "parlons" and list[1] == "de")) :
-    	if(list[0] == "parle"):
-    		i = 3
-    	else :
-    		i = 2
-    	if(list[i] == "toi") :
-    		return "Eh bien, je m'appelle Greg, et puis... euh... Je suis timide. C'est tout. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
-    	elif(list[i] == "moi") :
-    		return faireConnaissance()
-    	elif(existTerme(list[i])) :
-    		return chercherRelationTermeUtilisateur(list[i])
-    	else:
-    		return "Je ne sais pas ce qu'est {}. {}".format(list[i],random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 
 
 
-    elif(list[0] in LIST_BONJOUR) :
-    	if(len(list)>3) :
-    		mess = "{} {} {}".format(list[1],list[2],list[3])
-    		if(mess in LIST_CA_VA) :
-    			return "{}, je vais bien merci. {}".format(random.choice(LIST_BONJOUR).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
-    		else :
-    			return "{}. {}".format(random.choice(LIST_BONJOUR).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
-    	elif(len(list)>2) :
-    		mess = "{} {}".format(list[1],list[2])
-    		if(mess in LIST_CA_VA) :
-    			return "{}, je vais bien merci. {}".format(random.choice(LIST_BONJOUR).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
-    		else :
-    			"{}. {}".format(random.choice(LIST_BONJOUR).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
-    	else :
-    		return "{}. {}".format(random.choice(LIST_BONJOUR).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+	        elif(list[i+1] == "possède" or list[i+1] == "possede" or list[i+1] == "possedent" or list[i+1] == "possèdent") :
+	        	j = i+2
+	        	if(isAMotAEviter(list[j])) :
+	        		j += 1
+	        	relation_recherchee = "own"        
 
 
-    elif(message in LIST_FAIRE_CONNAISSANCE) :
-    	return faireConnaissance(request)
 
 
-    else:
-        """Ceci n'est peut etre pas une question
-            """
-        return "Je ne comprends pas encore ce que vous essayez de me dire. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+	        else :
+	            """Question non comprise
+	                """
+	            return "Je ne comprends pas votre question."
+	            compris = False   
+	        
+
+
+	        if(compris) :
+	            #termeU1 = Terme(list[i])
+	            teU1 = list[i]
+	            teU2 = list[j]
+	            print("Vous cherchez une relation {} {} {}".format(teU1,relation_recherchee,teU2))
+	            existeTerme1 = existTerme(teU1)
+	            if(existeTerme1 != -1) :
+	                #termeU2 = Terme(list[j])
+	                existeTerme2 = existTerme(teU2)
+	                if(existeTerme2 != -1) :
+	                    """On reconnait les deux termes que l'utilisateur à introduit
+	                    On cherche si la relation entre les deux existe """
+
+	                    print("Je connais les deux termes")
+	                    return searchRelationPourquoi(existeTerme1,relation_recherchee,existeTerme2)
+	                else :
+	                    """Le deuxiemme Terme est inconnu
+	                        """
+	                    return "Je ne connais pas ce qu'est {}".format(teU2)       
+	            else :
+	                """Le Premier Terme est inconnu
+	                    """
+	                return "Je ne connais pas ce qu'est {}".format(teU1)
+
+
+
+
+
+
+
+
+	    elif (((list[0] == "posez" or list[0] == "pose") and ("question" in list or "questions" in list)) or (list[0] in LIST_PARLE and len(list) == 1)):
+	    	return chercherQuestion()
+
+
+	    elif((list[0] == "parle" and list[1] == "moi" and list[2] == "de") or (list[0] == "parlons" and list[1] == "de")) :
+	    	if(list[0] == "parle"):
+	    		i = 3
+	    	else :
+	    		i = 2
+	    	if(list[i] == "toi") :
+	    		return "Eh bien, je m'appelle Greg, et puis... euh... Je suis timide. C'est tout. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+	    	elif(list[i] == "moi") :
+	    		return faireConnaissance(request)
+	    	elif(isAMotAEviter(list[i])) :
+	    		i += 1
+	    		if(existTerme(list[i])) :
+	    			return chercherRelationTermeUtilisateur(list[i])
+	    		else:
+	    			return "Je ne sais pas ce qu'est {}. {}".format(list[i],random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+	    	else :
+	    		if(existTerme(list[i])) :
+	    			return chercherRelationTermeUtilisateur(list[i])
+	    		else:
+	    			return "Je ne sais pas ce qu'est {}. {}".format(list[i],random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+
+
+
+
+
+	    elif(list[0] in LIST_BONJOUR) :
+	    	if(len(list)>3) :
+	    		mess = "{} {} {}".format(list[1],list[2],list[3])
+	    		if(mess in LIST_CA_VA) :
+	    			return "{}, je vais bien merci. {}".format(random.choice(LIST_BONJOUR).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+	    		else :
+	    			return "{}. {}".format(random.choice(LIST_BONJOUR).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+	    	elif(len(list)>2) :
+	    		mess = "{} {}".format(list[1],list[2])
+	    		if(mess in LIST_CA_VA) :
+	    			return "{}, je vais bien merci. {}".format(random.choice(LIST_BONJOUR).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+	    		else :
+	    			"{}. {}".format(random.choice(LIST_BONJOUR).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+	    	else :
+	    		return "{}. {}".format(random.choice(LIST_BONJOUR).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+
+
+	    elif(message in LIST_FAIRE_CONNAISSANCE) :
+	    	return faireConnaissance(request)
+
+
+	    else:
+	        """Ceci n'est peut etre pas une question
+	            """
+	        return "Je ne comprends pas encore ce que vous essayez de me dire. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+
+    except Exception :
+    	print("TU FAIS NIMPORTE QUOI YA ZEBI")
+    	return "Je ne comprends pas encore ce que vous essayez de me dire. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 
 
 

@@ -1,12 +1,19 @@
 <!--<link href="css/style.css" rel="stylesheet">
 -->
 
+{% load static %}
+
+<div>
+<img src="{% static "images/logo.png"%}" width="400" height=" 300">
+</div>
+
+</br>
 <h6>Nous sommes le {{date}}</h6>
 
 <h1>Bienvenue dans la page du chatbot</h1>
 <br/>
 <form method="GET" action="">
-	<div>
+	<div style = "text-align: center;">
 		<label for="phrase">{{ reponse }} </label>
 		<br/>
 		<br/>

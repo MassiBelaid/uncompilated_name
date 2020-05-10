@@ -67,20 +67,20 @@ def home(request):
 		else :
 			dialog.insert(0,phrase)
 			if(rav[0] == "4"):
-				rav2 = reponse_dialog_raffinement(rav,phrase,request)
-				if(type(rav2) == str):
-					dialog.insert(0,rav2)
+				liste_retour_raffinement = reponse_dialog_raffinement(rav,phrase,request)
+				if(type(liste_retour_raffinement) == str):
+					dialog.insert(0,liste_retour_raffinement)
 					request.session['dialog'] = dialog
-					return render(request,'chatbot/chatbot.html',{'date':today,'reponse':rav2,'dialog':dialog})
-				else :
-					if(len(rav2[1]) == 0):
+					return render(request,'chatbot/chatbot.html',{'date':today,'reponse':liste_retour_raffinement,'dialog':dialog})
+				elif(liste_retour_raffinement is not False) :
+					if(len(liste_retour_raffinement[1]) == 0):
 						request.session['question'] = None
-						rep = rav2[3]
+						rep = liste_retour_raffinement[3]
 					else :
-						request.session['question'] = rav2
-						rep = rav2[4]
-						dialog.insert(0,rep)
-						request.session['dialog'] = dialog
+						request.session['question'] = liste_retour_raffinement
+						rep = liste_retour_raffinement[4]
+					dialog.insert(0,rep)
+					request.session['dialog'] = dialog
 					return render(request,'chatbot/chatbot.html',{'date':today,'reponse':rep,'dialog':dialog})
 
 			else :
@@ -93,39 +93,50 @@ def home(request):
 				else :
 					if(reponse[0] == "4"):
 						liste_retour_raffinement = dialog_raffinement(reponse)
-						request.session['question'] = reponse
 						dialog.insert(0,liste_retour_raffinement[4])
 						request.session['dialog'] = dialog
-						return render(request,'chatbot/chatbot.html',{'date':today,'reponse':liste_retour_raffinement[4],'dialog':dialog})
+						print(liste_retour_raffinement[1])
+						if(len(liste_retour_raffinement[1]) == 0):
+							request.session['question'] = None
+							rep = liste_retour_raffinement[3]
+							dialog.insert(0,rep)
+							request.session['dialog'] = dialog
+							return render(request,'chatbot/chatbot.html',{'date':today,'reponse':rep,'dialog':dialog})
+						else :
+							request.session['question'] = liste_retour_raffinement
+							rep = liste_retour_raffinement[4]
+							dialog.insert(0,rep)
+							request.session['dialog'] = dialog
+						return render(request,'chatbot/chatbot.html',{'date':today,'reponse':rep,'dialog':dialog})
 					else :
 						request.session['question'] = reponse
 						reponse = construireQuestion (reponse)
 						dialog.insert(0,reponse)
 						request.session['dialog'] = dialog
-						return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
-	else :	
-		if(phrase == '') :
+						return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})	
+
+	if(phrase == '') :
+		request.session['dialog'] = dialog
+		return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour, je suis Greg. Que veux-tu savoir ?",'dialog':dialog})
+	else :
+		dialog.insert(0,phrase)
+		reponse = traitement_phrase(phrase,request)
+		print("_______________reponse : {} ".format(reponse))
+		if(type(reponse) == str) :
+			dialog.insert(0,reponse)
 			request.session['dialog'] = dialog
-			return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour, je suis Greg. Que veux-tu savoir ?",'dialog':dialog})
+			return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
 		else :
-			dialog.insert(0,phrase)
-			reponse = traitement_phrase(phrase,request)
-			print("_______________reponse : {} ".format(reponse))
-			if(type(reponse) == str) :
+			if(reponse[0] == "4"):
+				liste_retour_raffinement = dialog_raffinement(reponse)
+				request.session['question'] = reponse
+				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':liste_retour_raffinement[4],'dialog':dialog})
+			else :
+				request.session['question'] = reponse
+				reponse = construireQuestion (reponse)
 				dialog.insert(0,reponse)
 				request.session['dialog'] = dialog
 				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
-			else :
-				if(reponse[0] == "4"):
-					liste_retour_raffinement = dialog_raffinement(reponse)
-					request.session['question'] = reponse
-					return render(request,'chatbot/chatbot.html',{'date':today,'reponse':liste_retour_raffinement[4],'dialog':dialog})
-				else :
-					request.session['question'] = reponse
-					reponse = construireQuestion (reponse)
-					dialog.insert(0,reponse)
-					request.session['dialog'] = dialog
-					return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
 
 
 
@@ -270,7 +281,7 @@ def dialog_raffinement(tab_raffinement):
 	nouvelle_liste_retour.append("4")
 	liste_des_raffinement = tab_raffinement[1]
 	terme_raf_terme = liste_des_raffinement[0]
-	liste_des_raffinement.pop(0)
+	#terme_raf_terme = liste_des_raffinement.pop(0)
 	nouvelle_liste_retour.append(liste_des_raffinement)
 	nouvelle_liste_retour.append(tab_raffinement[2])
 	nouvelle_liste_retour.append(tab_raffinement[3])
@@ -286,7 +297,7 @@ def dialog_raffinement(tab_raffinement):
 
 
 
-def reponse_dialog_raffinement(tab_raffinement,reponse,request = None) :
+def reponse_dialog_raffinement(tab_raffinement,reponse = "non",request = None) :
 	nouvelle_liste_retour = []
 	nouvelle_liste_retour.append("4")
 	if(reponse in LIST_REPONSE_OUI_FORT):
@@ -297,16 +308,23 @@ def reponse_dialog_raffinement(tab_raffinement,reponse,request = None) :
 		return nouvelle_liste_retour
 	elif(reponse in LIST_REPONSE_NON_FORT):
 		liste_des_raffinement = tab_raffinement[1]
-		terme_raf_terme = liste_des_raffinement[0]
-		liste_des_raffinement.pop(0)
-		nouvelle_liste_retour.append(liste_des_raffinement)
-		nouvelle_liste_retour.append(tab_raffinement[2])
-		nouvelle_liste_retour.append(tab_raffinement[3])
-		nouvelle_liste_retour.append("veux tu parler de {} ({})".format(tab_raffinement[2],terme_raf_terme))
-		return nouvelle_liste_retour
+		#terme_raf_terme = liste_des_raffinement[0]
+		terme_raf_terme = liste_des_raffinement.pop(0)
+		if(len(liste_des_raffinement) > 0):
+			nouvelle_liste_retour.append(liste_des_raffinement)
+			nouvelle_liste_retour.append(tab_raffinement[2])
+			nouvelle_liste_retour.append(tab_raffinement[3])
+			nouvelle_liste_retour.append("veux tu parler de {} ({})".format(tab_raffinement[2],liste_des_raffinement[0]))
+			return nouvelle_liste_retour
+		else :
+			nouvelle_liste_retour.append(liste_des_raffinement)
+			nouvelle_liste_retour.append(tab_raffinement[2])
+			nouvelle_liste_retour.append(tab_raffinement[3])
+			nouvelle_liste_retour.append(tab_raffinement[3])
+			return nouvelle_liste_retour
 	else :
 		request.session['question'] = None
-		return traitement_phrase(reponse,request)
+		return False
 
 
 

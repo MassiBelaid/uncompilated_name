@@ -48,9 +48,12 @@ LIST_PARLE = ["parle","parlez","parlons","parles"]
 LIST_CONJ_ETRE = ["est","sont"]
 LIST_CONJ_APPARTENIR = ["appartient","appartiennent"]
 
+STOP_WORDS = ["un","une","des","la","le","les","ton","ta","tes","sa","ses","son","de","des","le","les","la","à","a",",",";","!",":","?","un","une","qu'un","qu'une",
+"que","appartient","appartiennent","est","sont","peut","avoir","comme","etre","être","moi"]
+
 RAFFINEMENT = "nul0"
 
-LIST_MOT_A_EVITER = ["ton","ta","tes","sa","ses","son","de","des","le","les","la","à","a",",",";","!",":","?","un","une"]
+LIST_MOT_A_EVITER = ["ton","ta","tes","sa","ses","son","de","des","le","les","la","à","a",",",";","!",":","?"]
 
 
 def home(request):
@@ -182,7 +185,7 @@ def extraire(terme) :
 def extraireJDM(terme, numRel) :
 	LIST_ALL = [[],[],[]]
 	idDuTerme = -1
-	termeURL = terme.replace("é","%E9").replace("è","%E8").replace("ê","%EA").replace("à","%E0").replace("ç","%E7").replace("û","%FB")
+	termeURL = terme.replace("é","%E9").replace("è","%E8").replace("ê","%EA").replace("à","%E0").replace("ç","%E7").replace("û","%FB").replace(" ","+")
 	try :
 		with urllib.request.urlopen("http://www.jeuxdemots.org/rezo-dump.php?gotermsubmit=Chercher&gotermrel={}&rel={}".format(termeURL,numRel)) as url :
 			s = url.read().decode('ISO-8859-1')
@@ -889,9 +892,9 @@ def pre_traitement_phrase(message):
 	listAvant = message.split()
 	listApres = []
 	for mot in listAvant :
-		listApres.append(separateurSymboleTerme(mot))
-	if("?" in listApres) :
-    		listApres.remove("?")
+		mot = separateurSymboleTerme(mot)
+		if(mot not in STOP_WORDS) :
+			listApres.append(mot)
 	return listApres
 
 
@@ -912,130 +915,152 @@ def traitement_phrase(message,request = None):
     try :
 
 
-	    if(list[0] == "est-ce" and list[1][0] == "q" and list[1][1] == "u"):
+	    if(list[0] == "est-ce"):
 	        """ Question du style est-ce qu.......
 	                """
 	        
-	        if (isAMotAEviter(list[2])) :
-	            """ phrase du style est-ce que un/une .........
-	                """
-	            i = 3
-	        else :
-	            """ phrase du style est-ce que/qu'une/qu'un .....
-	                """
-	            i = 2    
+	        i = 2
+	        termeUI1 = list[1]
+	        termeUI2 = ""    
 
 	        compris = True
-	        if((list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and list[i+3] == "sous-classe") or \
-	            (list[i+1] in LIST_CONJ_APPARTENIR and list[i+2] == "à" and list[i+3] == "la" and list[i+4] == "classe")or \
-	            (list[i+1] in LIST_CONJ_ETRE and list[i+2] == "sous-classe") or (list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and len(list)<=7)) :
+	        if(("classe" in list) or ("sous-classe" in list)) :
 	            """ Question du style K est {une/un} sous-classe/appartient à la classe
 	                Relation is_a
 	                """
 
-	            if(list[i+1] in LIST_CONJ_ETRE and (list[i+2] == "sous-classe" or list[i+3] == "sous-classe")) :
-	                """Question formulée de la premiére façon
-	                    """
-	                j = i+5
-	                if (isADeterminant(list[i+2]) == False):
-	                    """est sous-classe
-	                        """
-	                    j -= 1
-	            elif(list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2])):
-	            	j = i+3
-
+	            if("classe" in list):
+	            	indexDetemRel = list.index("classe")
 	            else :
-	                """Question formulée de la deuxiemme façon
-	                    """
-	                j = i+6
-	            if(isAMotAEviter(list[j])) :
-	                j += 1    
+	            	indexDetemRel = list.index("sous-classe")
 
-	            relation_recherchee = "is_a"            
+	            while(i < indexDetemRel):
+	            	termeUI1 = "{} {}".format(termeUI1,list[i])
+	            	i += 1
+
+	            j = indexDetemRel + 2
+	            termeUI2 = list[indexDetemRel + 1]
+	            while(j < len(list)):
+	            	termeUI2 = "{} {}".format(termeUI2,list[j])
+	            	j += 1
+
+
+	            relation_recherchee = "is_a"
 
 
 
 
-	        elif((list[i+1] in LIST_CONJ_ETRE and list[i+2] == "composé") or \
-	            (list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and list[i+3] == "partie")) :
+
+
+	        elif(("composé" in list) or ("partie" in list) or ("composée" in list)) :
 	            """Question du style K est composé/ est une partie ......
 	                Relation has_part
 	                """
-	            if(list[i+2] == "composé") :
-	                """Question du style K est composé de....
-	                    """
-	                j = i+4
-	                if (isAMotAEviter(list[j])):
-	                    j += 1
+	            if("composé" in list):
+	            	indexDetemRel = list.index("composé")
+	            elif("partie" in list):
+	            	indexDetemRel = list.index("partie")
 	            else :
-	                """Question du style K' est une partie de .....
-	                    """        
-	                j = i+5
-	                if (isAMotAEviter(list[j])):
-	                    j += 1
-	                if(list[j][len(list[j])-1] == '?'):
-	                	list[j] = list[j][0:len(list[j])-1]
-	                (i,j) = (j,i)    
+	            	indexDetemRel = list.index("composée")
+
+	            while(i < indexDetemRel):
+	            	termeUI1 = "{} {}".format(termeUI1,list[i])
+	            	i += 1
+
+	            j = indexDetemRel + 2
+	            termeUI2 = list[indexDetemRel + 1]
+	            while(j < len(list)):
+	            	termeUI2 = "{} {}".format(termeUI2,list[j])
+	            	j += 1
+
+
 	            relation_recherchee = "has_part"
 
 
 
+
 	        
-	        elif(list[i+1]=="peut" and (list[i+2] == "etre" or list[i+2] == "être") and not(re.search(list[i+3], r"qualifiée?") is None) or \
-	            (list[i+1]=="peut" and list[i+2]=="avoir" and list[i+3]=="comme" and list[i+4]=="propriété")):
+	        elif(("propriété" in list) or ("qualifié" in list) or ("qualifiée" in list)):
 	            """Question du style K peut etre qualifié(e)/ peut avoir comme propriété .....
 	                Relation has-attribute
 	                """
-	            if(list[i+2] == "avoir") :
-	                """Question peut avoir comme propriété .....
-	                    """
-	                j = i+5
+	            if("propriété" in list):
+	            	indexDetemRel = list.index("propriété")
+	            elif("qualifié" in list):
+	            	indexDetemRel = list.index("qualifié")
 	            else :
-	                """Question peut etre qualifié(e)
-	                    """
-	                j = i+5
-	            if(isAMotAEviter(list[j])) :
-	                j += 1
+	            	indexDetemRel = list.index("qualifiée")
+
+	            while(i < indexDetemRel):
+	            	termeUI1 = "{} {}".format(termeUI1,list[i])
+	            	i += 1
+
+	            j = indexDetemRel + 2
+	            termeUI2 = list[indexDetemRel + 1]
+	            while(j < len(list)):
+	            	termeUI2 = "{} {}".format(termeUI2,list[j])
+	            	j += 1
+
 	            relation_recherchee = "has_attribute"
 
 
-	        elif(list[i+1] == "possède" or list[i+1] == "possede" or list[i+1] == "possedent" or list[i+1] == "possèdent") :
-	        	j = i+2
-	        	if(isAMotAEviter(list[j])) :
-	        		j += 1
-	        	relation_recherchee = "own"
+	        elif(("possède" in list) or ("possede" in list) or ("possèdent" in list) or ("posseder" in list) or ("possedent" in list)) :
 
+	        	if("possède" in list):
+	        		indexDetemRel = list.index("possède")
+	        	elif("possede" in list):
+	        		indexDetemRel = list.index("possede")
+	        	elif("possede" in list):
+	        		indexDetemRel = list.index("possèdent")
+	        	elif("possedent" in list):
+	        		indexDetemRel = list.index("possedent")
+	        	else:
+	        		indexDetemRel = list.index("posseder")  
+
+	        	while(i < indexDetemRel):
+	        		termeUI1 = "{} {}".format(termeUI1,list[i])
+	        		i += 1
+
+	        	j = indexDetemRel + 2
+	        	termeUI2 = list[indexDetemRel + 1]
+	        	while(j < len(list)):
+	        		termeUI2 = "{} {}".format(termeUI2,list[j])
+	        		j += 1
+
+	        	relation_recherchee = "r_own"
 	        else :
-	            """Question non comprise
-	                """
-	            return "Je ne comprends pas votre question"
-	            compris = False   
+	        	termeUI1 = list[1]
+	        	j = 3 
+	        	termeUI2 = list[2]
+	        	while(j < len(list)):
+	        		termeUI2 = "{} {}".format(termeUI2,list[j])
+	        		j += 1
+	        	relation_recherchee = "is_a"
 	        
 
-	        if(compris) :
-	            print("Vous cherchez une relation {} {} {}".format(list[i],relation_recherchee,list[j]))
-	            #termeU1 = Terme(list[i])
-	            teU1 = list[i]
-	            existeTerme1 = existTerme(teU1)
-	            if(existeTerme1 != -1) :
-	                #termeU2 = Terme(list[j])
-	                teU2 = list[j]
-	                existeTerme2 = existTerme(teU2)
-	                if(existeTerme2 != -1) :
-	                    """On reconnait les deux termes que l'utilisateur à introduit
-	                    On cherche si la relation entre les deux existe """
 
-	                    print("Je connais les deux termes")
-	                    #print(searchRelation(teU1,relation_recherchee,teU2))
-	                    return searchRelation(existeTerme1,relation_recherchee,existeTerme2)
-	                else :
-	                    """Le deuxiemme Terme est inconnu
-	                        """
-	                    return "Je ne connais pas ce qu'est {}".format(teU2)       
+	        print("Vous cherchez une relation {} {} {}".format(termeUI1,relation_recherchee,termeUI2))
+
+	        existeTerme1 = existTerme(termeUI1)
+	        if(existeTerme1 != -1) :
+
+	            existeTerme2 = existTerme(termeUI2)
+	            if(existeTerme2 != -1) :
+	                """On reconnait les deux termes que l'utilisateur à introduit
+	                On cherche si la relation entre les deux existe """
+
+	                print("Je connais les deux termes")
+	                #print(searchRelation(teU1,relation_recherchee,teU2))
+	                return searchRelation(existeTerme1,relation_recherchee,existeTerme2)
 	            else :
-	                """Le Premier Terme est inconnu
+	                """Le deuxiemme Terme est inconnu
 	                    """
-	                return "Je ne connais pas ce qu'est {}".format(list[i])
+	                return "Je ne connais pas ce qu'est {}".format(termeUI2)       
+	        else :
+	            """Le Premier Terme est inconnu
+	                """
+	            return "Je ne connais pas ce qu'est {}".format(termeUI1)
+
 
 
 
@@ -1048,95 +1073,100 @@ def traitement_phrase(message,request = None):
 
 
 
-	        if (list[1] == "est-ce" and list[2] == "que") :
+	        if (list[1] == "est-ce" ) :
 	            """ phrase du style est-ce que un/une .........
 	                """
 	            i = 3
+	            termeUI1 = list[2]
+	            termeUI2 = ""
 	        else :
 	            """ phrase du style est-ce que/qu'une/qu'un .....
 	                """
-	            i = 1 
-
-	        if(isAMotAEviter(list[i])) :
-	        	i += 1   
+	            i = 2
+	            termeUI1 = list[1]
+	            termeUI2 = ""
+	  
 
 	        compris = True
-	        if((list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and list[i+3] == "sous-classe") or \
-	            (list[i+1] in LIST_CONJ_APPARTENIR and list[i+2] == "à" and list[i+3] == "la" and list[i+4] == "classe")or \
-	            (list[i+1] in LIST_CONJ_ETRE and list[i+2] == "sous-classe") or (list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]))) :
+	        if(("classe" in list) or ("sous-classe" in list)) :
 	            """ Question du style K est {une/un} sous-classe/appartient à la classe
 	                Relation is_a
 	                """
 
-	            if(list[i+1] in LIST_CONJ_ETRE and (list[i+2] == "sous-classe" or list[i+3] == "sous-classe")) :
-	                """Question formulée de la premiére façon
-	                    """
-	                j = i+5
-	                if (isADeterminant(list[i+2])):
-	                    """est sous-classe
-	                        """
-	                    j -= 1
-	            elif(list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2])):
-	            	j = i+3
+	            if("classe" in list):
+	            	indexDetemRel = list.index("classe")
 	            else :
-	                """Question formulée de la deuxiemme façon
-	                    """
-	                j = i+6
-	            if(isAMotAEviter(list[j])) :
-	                j += 1    
+	            	indexDetemRel = list.index("sous-classe")
 
-	            relation_recherchee = "is_a"            
+	            while(i < indexDetemRel):
+	            	termeUI1 = "{} {}".format(termeUI1,list[i])
+	            	i += 1
+
+	            j = indexDetemRel + 2
+	            termeUI2 = list[indexDetemRel + 1]
+	            while(j < len(list)):
+	            	termeUI2 = "{} {}".format(termeUI2,list[j])
+	            	j += 1
+	            print(termeUI1)
+	            print(termeUI2)
+
+	            relation_recherchee = "is_a"           
 
 
 
 
 
-	        elif((list[i+1] in LIST_CONJ_ETRE and list[i+2] == "composé") or \
-	            (list[i+1] in LIST_CONJ_ETRE and isADeterminant(list[i+2]) and list[i+3] == "partie")) :
+	        elif(("composé" in list) or ("partie" in list) or ("composée" in list)) :
 	            """Question du style K est composé/ est une partie ......
 	                Relation has_part
 	                """
-	            if(list[i+2] == "composé") :
-	                """Question du style K est composé de....
-	                    """
-	                j = i+4
-	                if (isAMotAEviter(list[j])):
-	                    j += 1
+	            if("composé" in list):
+	            	indexDetemRel = list.index("composé")
+	            elif("partie" in list):
+	            	indexDetemRel = list.index("partie")
 	            else :
-	                """Question du style K' est une partie de .....
-	                    """        
-	                j = i+5
-	                if (isAMotAEviter(list[j])):
-	                    j += 1
-	                if(list[j][len(list[j])-1] == '?'):
-	                	list[j] = list[j][0:len(list[j])-1]
-	                (i,j) = (j,i)    
+	            	indexDetemRel = list.index("composée")
+
+	            while(i < indexDetemRel):
+	            	termeUI1 = "{} {}".format(termeUI1,list[i])
+	            	i += 1
+
+	            j = indexDetemRel + 2
+	            termeUI2 = list[indexDetemRel + 1]
+	            while(j < len(list)):
+	            	termeUI2 = "{} {}".format(termeUI2,list[j])
+	            	j += 1
+	            print(termeUI1)
+	            print(termeUI2)
+
 	            relation_recherchee = "has_part"
 
 
 
 
 	        
-	        elif((list[i+1]=="peut" or list[i+1]=="peuvent") and (list[i+2] == "etre" or list[i+2] == "être") and not(re.search(list[i+3], r"qualifiée?s?") is None) or \
-	            ((list[i+1]=="peut" or list[i+1]=="peuvent") and list[i+2]=="avoir" and list[i+3]=="comme" and list[i+4]=="propriété") or \
-	            ((list[i+1]=="a" or list[i+1]=="ont") and list[i+2]=="comme" and list[i+3]=="propriété")):
+	        elif(("propriété" in list) or ("qualifié" in list) or ("qualifiée" in list)):
 	            """Question du style K peut etre qualifié(e) / peut avoir comme propriété / a comme propritété .....
 	                Relation has-attribute
 	                """
-	            if(list[i+2] == "avoir") :
-	                """Question peut avoir comme propriété .....
-	                    """
-	                j = i+5
-	            elif(list[i+2] == "être" or list[i+2] == "etre") :
-	                """Question peut etre qualifié(e)
-	                    """
-	                j = i+5
-	                if(isAMotAEviter(list[j]) or list[j] == "de") :
-	                    j += 1
-	            elif(list[i+2] == "comme") :
-	            	j = i+4
-	            	if(isAMotAEviter(list[j]) or list[j] == "de") :
-	            		j += 1
+	            if("propriété" in list):
+	            	indexDetemRel = list.index("propriété")
+	            elif("qualifié" in list):
+	            	indexDetemRel = list.index("qualifié")
+	            else :
+	            	indexDetemRel = list.index("qualifiée")
+
+	            while(i < indexDetemRel):
+	            	termeUI1 = "{} {}".format(termeUI1,list[i])
+	            	i += 1
+
+	            j = indexDetemRel + 2
+	            termeUI2 = list[indexDetemRel + 1]
+	            while(j < len(list)):
+	            	termeUI2 = "{} {}".format(termeUI2,list[j])
+	            	j += 1
+	            print(termeUI1)
+	            print(termeUI2)
 	            relation_recherchee = "has_attribute"
 
 
@@ -1144,11 +1174,31 @@ def traitement_phrase(message,request = None):
 
 
 
-	        elif(list[i+1] == "possède" or list[i+1] == "possede" or list[i+1] == "possedent" or list[i+1] == "possèdent") :
-	        	j = i+2
-	        	if(isAMotAEviter(list[j])) :
+	        elif(("possède" in list) or ("possede" in list) or ("possèdent" in list) or ("posseder" in list) or ("possedent" in list)) :
+	        	if("possède" in list):
+	        		indexDetemRel = list.index("possède")
+	        	elif("possede" in list):
+	        		indexDetemRel = list.index("possede")
+	        	elif("possede" in list):
+	        		indexDetemRel = list.index("possèdent")
+	        	elif("possedent" in list):
+	        		indexDetemRel = list.index("possedent")
+	        	else:
+	        		indexDetemRel = list.index("posseder")  
+
+	        	while(i < indexDetemRel):
+	        		termeUI1 = "{} {}".format(termeUI1,list[i])
+	        		i += 1
+
+	        	j = indexDetemRel + 2
+	        	termeUI2 = list[indexDetemRel + 1]
+	        	while(j < len(list)):
+	        		termeUI2 = "{} {}".format(termeUI2,list[j])
 	        		j += 1
-	        	relation_recherchee = "own"        
+
+	        	print(termeUI1)
+	        	print(termeUI2)
+	        	relation_recherchee = "r_own"      
 
 
 
@@ -1156,34 +1206,37 @@ def traitement_phrase(message,request = None):
 	        else :
 	            """Question non comprise
 	                """
-	            return "Je ne comprends pas votre question."
-	            compris = False   
+
+	            termeUI1 = list[i-1]
+	            j = i+1
+	            termeUI2 = list[i]
+	            while(j < len(list)):
+	            	termeUI2 = "{} {}".format(termeUI2,list[j])
+	            	j += 1
+	            relation_recherchee = "is_a" 
 	        
 
 
-	        if(compris) :
-	            #termeU1 = Terme(list[i])
-	            teU1 = list[i]
-	            teU2 = list[j]
-	            print("Vous cherchez une relation {} {} {}".format(teU1,relation_recherchee,teU2))
-	            existeTerme1 = existTerme(teU1)
-	            if(existeTerme1 != -1) :
-	                #termeU2 = Terme(list[j])
-	                existeTerme2 = existTerme(teU2)
-	                if(existeTerme2 != -1) :
-	                    """On reconnait les deux termes que l'utilisateur à introduit
-	                    On cherche si la relation entre les deux existe """
 
-	                    print("Je connais les deux termes")
-	                    return searchRelationPourquoi(existeTerme1,relation_recherchee,existeTerme2)
-	                else :
-	                    """Le deuxiemme Terme est inconnu
-	                        """
-	                    return "Je ne connais pas ce qu'est {}".format(teU2)       
+	        print("Vous cherchez une relation {} {} {}".format(termeUI1,relation_recherchee,termeUI2))
+	        existeTerme1 = existTerme(termeUI1)
+	        if(existeTerme1 != -1) :
+	            #termeU2 = Terme(list[j])
+	            existeTerme2 = existTerme(termeUI2)
+	            if(existeTerme2 != -1) :
+	                """On reconnait les deux termes que l'utilisateur à introduit
+	                On cherche si la relation entre les deux existe """
+
+	                print("Je connais les deux termes")
+	                return searchRelationPourquoi(existeTerme1,relation_recherchee,existeTerme2)
 	            else :
-	                """Le Premier Terme est inconnu
+	                """Le deuxiemme Terme est inconnu
 	                    """
-	                return "Je ne connais pas ce qu'est {}".format(teU1)
+	                return "Je ne connais pas ce qu'est {}".format(termeUI2)       
+	        else :
+	            """Le Premier Terme est inconnu
+	                """
+	            return "Je ne connais pas ce qu'est {}".format(termeUI1)
 
 
 
@@ -1192,30 +1245,42 @@ def traitement_phrase(message,request = None):
 
 
 
-	    elif (((list[0] == "posez" or list[0] == "pose") and ("question" in list or "questions" in list)) or (list[0] in LIST_PARLE and len(list) == 1)):
+	    elif (("question" in list) or ("questions" in list) or ("questionne" in list) or ("questionnez" in list)):
 	    	return chercherQuestion()
 
 
-	    elif((list[0] == "parle" and list[1] == "moi" and list[2] == "de") or (list[0] == "parlons" and list[1] == "de")) :
-	    	if(list[0] == "parle"):
-	    		i = 3
-	    	else :
-	    		i = 2
-	    	if(list[i] == "toi") :
-	    		return "Eh bien, je m'appelle Greg, et puis... euh... Je suis timide. C'est tout. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
-	    	elif(list[i] == "moi") :
+	    elif(("parle" in list) or ("parlons" in list) or ("parler" in list) or ("parles" in list)) :
+
+
+	    	if("parle" in list) :
+	    		indexDetemRel = list.index("parle") + 1
+	    	elif("parlons" in list) :
+	    		indexDetemRel = list.index("parlons") + 1
+	    	elif("parler" in list) :
+	    		indexDetemRel = list.index("parler") + 1
+	    	elif("parles" in list) :
+	    		indexDetemRel = list.index("parles") + 1
+
+
+	    	if(len(list) == 1) :
 	    		return faireConnaissance(request)
-	    	elif(isAMotAEviter(list[i])) :
-	    		i += 1
-	    		if(existTerme(list[i])) :
-	    			return chercherRelationTermeUtilisateur(list[i])
-	    		else:
-	    			return "Je ne sais pas ce qu'est {}. {}".format(list[i],random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+	    		
+	    	elif(list[indexDetemRel] == "toi") :
+	    		return "Eh bien, je m'appelle Greg, et puis... euh... Je suis timide. C'est tout. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+
 	    	else :
-	    		if(existTerme(list[i])) :
-	    			return chercherRelationTermeUtilisateur(list[i])
+	    		termeUI = list[indexDetemRel]
+	    		indexDetemRel += 1
+
+	    		while(indexDetemRel < len(list)):
+	    			termeUI = "{} {}".format(termeUI, list[indexDetemRel])
+	    			indexDetemRel += 1
+
+
+	    		if(existTerme(termeUI)) :
+	    			return chercherRelationTermeUtilisateur(termeUI)
 	    		else:
-	    			return "Je ne sais pas ce qu'est {}. {}".format(list[i],random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+	    			return "Je ne sais pas ce qu'est {}. {}".format(termeUI,random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 
 
 
@@ -1247,7 +1312,7 @@ def traitement_phrase(message,request = None):
 	            """
 	        return "Je ne comprends pas encore ce que vous essayez de me dire. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 
-    except Exception :
+    except Exception:
     	print("TU FAIS NIMPORTE QUOI YA ZEBI")
     	return "Je ne comprends pas encore ce que vous essayez de me dire. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 

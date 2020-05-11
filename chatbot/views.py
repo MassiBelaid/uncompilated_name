@@ -32,7 +32,7 @@ LIST_NON_FORT = ["absolument pas","impossible","pas du tout"]
 LIST_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne crois pas"]
 
 LIST_REPONSE_OUI_FORT = ["oui certainement","oui sûrement","oui absolument","oui surement","oui","absolument","surement","sûrement","assurément","assurément oui","assurement","assurement oui","bah oui","ben oui"]
-LIST_REPONSE_OUI_FAIBLE = ["oui en majorité","oui globalement","oui probablement","oui dans beaucoup de cas","oui en majorite","eventuellement"]
+LIST_REPONSE_OUI_FAIBLE = ["oui en majorité","oui globalement","oui probablement","oui dans beaucoup de cas","oui en majorite","eventuellement","parfois","oui parfois","parfois oui"]
 LIST_REPONSE_SAIS_PAS = ["peut-être","peut etre", "peut être","pas toujours","pas forcément","pas forcement","peut-etre","je ne suis pas sur","je ne suis pas sûr","je ne crois pas","je crois pas","je ne pense pas","je pense pas","je sais pas","je ne sais pas"]
 LIST_REPONSE_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne crois pas","plutot pas","peut-etre pas"]
 LIST_REPONSE_NON_FORT = ["absolument pas","impossible","pas du tout","non","absolument non"]

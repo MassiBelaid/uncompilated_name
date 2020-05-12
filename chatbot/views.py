@@ -974,6 +974,9 @@ def traitement_phrase(message,request = None):
 	            	j += 1
 
 
+	            if("partie" in list):
+	            	(termeUI1,termeUI2) = (termeUI2,termeUI1)
+
 	            relation_recherchee = "has_part"
 
 
@@ -1139,6 +1142,10 @@ def traitement_phrase(message,request = None):
 	            print(termeUI1)
 	            print(termeUI2)
 
+
+	            if("partie" in list):
+	            	(termeUI1,termeUI2) = (termeUI2,termeUI1)
+	            	
 	            relation_recherchee = "has_part"
 
 

@@ -111,20 +111,6 @@ else:
         }
     }
 
-"""DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',   # Backends disponibles : 'postgresql', 'mysql', 'sqlite3' et 'oracle'.
-        'NAME': 'un',             # Nom de la base de données
-        'USER': 'postgres',
-        'PASSWORD': 'Bejaia06',        
-        'HOST': '127.0.0.1',                    # Utile si votre base de données est sur une autre machine
-        'PORT': '5432',                          #... et si elle utilise un autre port que celui par défaut
-        'TEST': {
-            'CHARSET' : 'utf8',
-            'COLLATION':'utf8_general_ci'
-        }
-    }
-}"""
 
 
 # Password validation
@@ -164,6 +150,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
 if os.environ.get('ENV') == 'PRODUCTION':
     PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
     STATIC_ROOT = os.path.join(PROJECT_ROOT, 'static')

@@ -1404,7 +1404,7 @@ LIST_TERMES_A_EXTRAIRE = ["angle","armoire","banc","bureau","cabinet","carreau",
 "aliment","ananas","banane","bifteck","café","carotte","cerise","chocolat","chou","citron","citrouille","clémentine","concombre","coquillage","corbeille","crabe","crevette","endive","farine",
 "fraise","framboise","fromage","fruit","gâteau","haricot","huile","légume","marchand","melon","monnaie","navet","noisette","noix","nourriture","oignon","orange","panier","pâtes","pêche","persil",
 "petit pois","poire","poireau","pomme","pomme de terre","prix","prune","queue","raisin","riz","salade","sucre","thé","tomate","viande","vin","cher","léger","lourd","plein","baleine","bouée","île",
-"jumelles","marin","mer","mouette","navire","pêcheur","plage","poisson","port","sardine","serviette","vague","voile"]
+"jumelles","marin","mer","mouette","navire","pêcheur","plage","poisson","port","sardine","serviette","vague","voile","humain","tête"]
 
 
 

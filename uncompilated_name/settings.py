@@ -87,10 +87,10 @@ if os.environ.get('ENV') == 'PRODUCTION':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',   # Backends disponibles : 'postgresql', 'mysql', 'sqlite3' et 'oracle'.
-            'NAME': 'da2iau4ctgkned',             # Nom de la base de données
-            'USER': 'kfrmjzmfzabgoj',
-            'PASSWORD': '3c968e6ea4157990fe88a0b6d9bb7936922fb5d4668cad58d05773adc17d0eec',        
-            'HOST': 'ec2-52-201-55-4.compute-1.amazonaws.com',                    # Utile si votre base de données est sur une autre machine
+            'NAME': 'd6sg7k6rn422fb',             # Nom de la base de données
+            'USER': 'ymflhzrbkwdqtk',
+            'PASSWORD': '62ddeb18e37f1b3e3695050665b14c771235d125e85deee782137ba0273bb108',        
+            'HOST': 'ec2-35-169-254-43.compute-1.amazonaws.com',                    # Utile si votre base de données est sur une autre machine
             'PORT': '5432',                          #... et si elle utilise un autre port que celui par défaut
         }
     }

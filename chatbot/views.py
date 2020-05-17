@@ -122,17 +122,18 @@ def home(request):
 		request.session['dialog'] = dialog
 		return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour, je suis Greg. Que veux-tu savoir ?",'dialog':dialog})
 	else :
-		dialog.insert(0,phrase)
 		reponse = traitement_phrase(phrase,request)
 		print("_______________reponse : {} ".format(reponse))
 		if(type(reponse) == str) :
 			dialog.insert(0,reponse)
 			request.session['dialog'] = dialog
+			dialog.insert(0,phrase)
 			return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
 		else :
 			if(reponse[0] == "4"):
 				liste_retour_raffinement = dialog_raffinement(reponse)
 				request.session['question'] = reponse
+				dialog.insert(0,liste_retour_raffinement[4])
 				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':liste_retour_raffinement[4],'dialog':dialog})
 			else :
 				request.session['question'] = reponse

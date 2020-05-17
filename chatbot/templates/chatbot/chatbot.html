@@ -3,28 +3,43 @@
 
 {% load static %}
 
-<div>
-<img src="{% static "images/logo.png"%}" width="400" height=" 300">
-</div>
+<head>
+</head>
 
-</br>
-<h6>Nous sommes le {{date}}</h6>
+<body>
+	<header style = " overflow: hidden;
+  					background-color: #f1f1f1;
+  					padding: 10px 5px;
+  					">
+		<div>
+	<img src="{% static "images/logo.png"%}" width="100" height=" 70">
+		</div>
 
-<h1>Bienvenue dans la page du chatbot</h1>
-<br/>
-<form method="GET" action="">
-	<div style = "text-align: center;">
-		<label for="phrase">{{ reponse }} </label>
-		<br/>
-		<br/>
-		<input style ="height: 30px; width: 700px; font-size: 1em; " type="text" name="phrase" id="phrase" required/>
-		<input type="submit" value="Parler">
-	</div>
-	<div>
-		<ul>
-			{% for phr in dialog %}
-    			<li>{{ phr }}</li>
-			{% endfor %}
-		</ul>
-	</div>
-</form>
+		<p style = "background-position: center center;">
+			Uncompilated-Name
+		</p>
+	</header>
+
+
+	</br>
+	<h6>Nous sommes le {{date}}</h6>
+
+	<h1>Bienvenue dans la page du chatbot</h1>
+	<br/>
+	<form method="GET" action="">
+		<div style = "text-align: center;">
+			<label for="phrase">{{ reponse }} </label>
+			<br/>
+			<br/>
+			<input style ="height: 30px; width: 700px; font-size: 1em; " type="text" name="phrase" id="phrase" required/>
+			<input type="submit" value="Parler">
+		</div>
+		<div style = "overflow: auto; width : 500px height :600px">
+			<ul >
+				{% for phr in dialog %}
+	    			<li>{{ phr }}</li>
+				{% endfor %}
+			</ul>
+		</div>
+	</form>
+</body>

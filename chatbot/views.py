@@ -69,6 +69,7 @@ def home(request):
 			request.session['dialog'] = None
 			dialog = []
 			dialog.insert(0,"Bonjour, je suis Greg. Que veux-tu savoir ?")
+			request.session['dialog'] = dialog
 			return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour, je suis Greg. Que veux-tu savoir ?",'dialog':dialog})
 		else :
 			if(rav[0] == "4"):
@@ -130,6 +131,7 @@ def home(request):
 		request.session['question'] = None
 		dialog = []
 		dialog.insert(0,"Bonjour, je suis Greg. Que veux-tu savoir ?")
+		request.session['dialog'] = dialog
 		return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour, je suis Greg. Que veux-tu savoir ?",'dialog':dialog})
 	else :
 		reponse = traitement_phrase(phrase,request)

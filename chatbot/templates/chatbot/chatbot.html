@@ -1,9 +1,11 @@
 {% load static %}
 
 
-<link href="{% static 'css/style.css' %}" rel="stylesheet">
+
 
 <head>
+	<title>Accueil</title>
+	<link href="{% static 'css/style.css' %}" rel="stylesheet">
 </head>
 
 <body>
@@ -14,7 +16,7 @@
 	</header>
 	
 	<form method="GET" action="">
-		<div style = "overflow: scroll; height: 600px" >
+		<div style = "overflow: scroll; height: 600px; display: flex; flex-direction: column-reverse; align-items:center;" >
 				
 				{% for phr in dialog %}
 					{% if forloop.counter0|divisibleby:2 %}					
@@ -24,7 +26,7 @@
 	  						<span class="time-right">{% now "H:i" %}</span>
 						</div>
 					{% else %}
-						<div class="container ">
+						<div class="container">
 	  						<img src="{% static 'images/borat.jpg' %}" alt="Avatar" class="right" style="width:100%;">
 	  						<p>{{ phr }}</p>
 	  						<span class="time-left">{% now "H:i" %}</span>
@@ -37,15 +39,16 @@
 		</div>
 
 		<div class="container-form">
- 			<input style ="width: 79%" type="text" name="phrase" id="phrase" required/>
+ 			<input style ="width: 79%" type="text" name="phrase" id="phrase" required autofocus/>
 			<input style="width: 19%" type="submit" value="Parler">
 		</div>
 	</form>
 
 	<footer style = " overflow: hidden;
-  					background-color: #f1f1f1;">
+  					background-color: #f1f1f1;
+  					padding: 10px">
 		<div style="float: left;">
-			<img src="{% static 'images/logo.png' %}" width="100" height=" 70">
+			<img src="{% static 'images/logo.png' %}" width="150" height=" 100">
 		</div>
 
 		<p style = "float: right;">&copy;UncompilatedName</p>

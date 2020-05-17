@@ -1,45 +1,53 @@
-<!--<link href="css/style.css" rel="stylesheet">
--->
-
 {% load static %}
+
+
+<link href="{% static 'css/style.css' %}" rel="stylesheet">
 
 <head>
 </head>
 
 <body>
-	<header style = " overflow: hidden;
-  					background-color: #f1f1f1;
-  					padding: 10px 5px;
-  					">
-		<div>
-	<img src="{% static "images/logo.png"%}" width="100" height=" 70">
-		</div>
 
-		<p style = "background-position: center center;">
-			Uncompilated-Name
-		</p>
+	<header style="overflow: hidden;">
+		<p style="float: left;">{{date}}</p>
+		<a style="float: right; " href='help'><p>Comment ça marche ?</p></a>
 	</header>
-
-
-	</br>
-	<h6>Nous sommes le {{date}}</h6>
-
-	<h1>Bienvenue dans la page du chatbot</h1>
-	<br/>
+	
 	<form method="GET" action="">
-		<div style = "text-align: center;">
-			<label for="phrase">{{ reponse }} </label>
-			<br/>
-			<br/>
-			<input style ="height: 30px; width: 700px; font-size: 1em; " type="text" name="phrase" id="phrase" required/>
-			<input type="submit" value="Parler">
-		</div>
-		<div style = "overflow: auto; width : 500px height :600px">
-			<ul >
+		<div style = "overflow: scroll; height: 600px" >
+				
 				{% for phr in dialog %}
-	    			<li>{{ phr }}</li>
+					{% if forloop.counter0|divisibleby:2 %}					
+		    			<div class="container darker">
+	  						<img src="{% static 'images/blender.jpg' %}" alt="Avatar" class="left" style="width:100%;">
+	  						<p>{{ phr }}</p>
+	  						<span class="time-right">{% now "H:i" %}</span>
+						</div>
+					{% else %}
+						<div class="container ">
+	  						<img src="{% static 'images/borat.jpg' %}" alt="Avatar" class="right" style="width:100%;">
+	  						<p>{{ phr }}</p>
+	  						<span class="time-left">{% now "H:i" %}</span>
+						</div>
+					{% endif %}
+
+				
 				{% endfor %}
-			</ul>
+				
+		</div>
+
+		<div class="container-form">
+ 			<input style ="width: 79%" type="text" name="phrase" id="phrase" required/>
+			<input style="width: 19%" type="submit" value="Parler">
 		</div>
 	</form>
+
+	<footer style = " overflow: hidden;
+  					background-color: #f1f1f1;">
+		<div style="float: left;">
+			<img src="{% static 'images/logo.png' %}" width="100" height=" 70">
+		</div>
+
+		<p style = "float: right;">&copy;UncompilatedName</p>
+	</footer>
 </body>

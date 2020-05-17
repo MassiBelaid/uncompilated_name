@@ -32,7 +32,7 @@ else :
 
 
 
-ALLOWED_HOSTS = ['uncompilatedname.herokuapp.com','localhost']
+ALLOWED_HOSTS = ['uncompilatedname.herokuapp.com','localhost','127.0.0.1']
 
 
 # Application definition
@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'chatbot'
+    'chatbot',
+
 ]
 
 MIDDLEWARE = [

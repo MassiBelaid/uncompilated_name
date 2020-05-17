@@ -122,6 +122,7 @@ def home(request):
 		request.session['dialog'] = dialog
 		return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour, je suis Greg. Que veux-tu savoir ?",'dialog':dialog})
 	else :
+		dialog.insert(0,phrase)
 		reponse = traitement_phrase(phrase,request)
 		print("_______________reponse : {} ".format(reponse))
 		if(type(reponse) == str) :

@@ -66,12 +66,14 @@ def home(request):
 	if (rav is not None) :
 		if(phrase == '') :
 			request.session['question'] = None
+			request.session['dialog'] = None
+			dialog = []
 			return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour, je suis Greg. Que veux-tu savoir ?",'dialog':dialog})
 		else :
-			dialog.insert(0,phrase)
 			if(rav[0] == "4"):
 				liste_retour_raffinement = reponse_dialog_raffinement(rav,phrase,request)
 				if(type(liste_retour_raffinement) == str):
+					dialog.insert(0,phrase)
 					dialog.insert(0,liste_retour_raffinement)
 					request.session['dialog'] = dialog
 					return render(request,'chatbot/chatbot.html',{'date':today,'reponse':liste_retour_raffinement,'dialog':dialog})
@@ -82,6 +84,7 @@ def home(request):
 					else :
 						request.session['question'] = liste_retour_raffinement
 						rep = liste_retour_raffinement[4]
+					dialog.insert(0,phrase)
 					dialog.insert(0,rep)
 					request.session['dialog'] = dialog
 					return render(request,'chatbot/chatbot.html',{'date':today,'reponse':rep,'dialog':dialog})
@@ -90,55 +93,61 @@ def home(request):
 				reponse = traitement_reponse(rav, phrase,request)
 				request.session['question'] = None
 				if(type(reponse) == str) :
+					dialog.insert(0,phrase)
 					dialog.insert(0,reponse)
 					request.session['dialog'] = dialog
 					return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
 				else :
 					if(reponse[0] == "4"):
 						liste_retour_raffinement = dialog_raffinement(reponse)
-						dialog.insert(0,liste_retour_raffinement[4])
 						request.session['dialog'] = dialog
 						print(liste_retour_raffinement[1])
 						if(len(liste_retour_raffinement[1]) == 0):
 							request.session['question'] = None
 							rep = liste_retour_raffinement[3]
+							dialog.insert(0,phrase)
 							dialog.insert(0,rep)
 							request.session['dialog'] = dialog
 							return render(request,'chatbot/chatbot.html',{'date':today,'reponse':rep,'dialog':dialog})
 						else :
 							request.session['question'] = liste_retour_raffinement
 							rep = liste_retour_raffinement[4]
+							dialog.insert(0,phrase)
 							dialog.insert(0,rep)
 							request.session['dialog'] = dialog
-						return render(request,'chatbot/chatbot.html',{'date':today,'reponse':rep,'dialog':dialog})
+							return render(request,'chatbot/chatbot.html',{'date':today,'reponse':rep,'dialog':dialog})
 					else :
 						request.session['question'] = reponse
 						reponse = construireQuestion (reponse)
+						dialog.insert(0,phrase)
 						dialog.insert(0,reponse)
 						request.session['dialog'] = dialog
 						return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})	
 
 	if(phrase == '') :
-		request.session['dialog'] = dialog
+		request.session['dialog'] = None
+		request.session['question'] = None
+		dialog = []
 		return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour, je suis Greg. Que veux-tu savoir ?",'dialog':dialog})
 	else :
-		dialog.insert(0,phrase)
 		reponse = traitement_phrase(phrase,request)
 		print("_______________reponse : {} ".format(reponse))
 		if(type(reponse) == str) :
+			dialog.insert(0,phrase)
 			dialog.insert(0,reponse)
 			request.session['dialog'] = dialog
-			dialog.insert(0,phrase)
 			return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
 		else :
 			if(reponse[0] == "4"):
 				liste_retour_raffinement = dialog_raffinement(reponse)
-				request.session['question'] = reponse
+				dialog.insert(0,phrase)
 				dialog.insert(0,liste_retour_raffinement[4])
+				request.session['question'] = reponse
 				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':liste_retour_raffinement[4],'dialog':dialog})
 			else :
 				request.session['question'] = reponse
 				reponse = construireQuestion (reponse)
+				dialog.insert(0,phrase)
 				dialog.insert(0,reponse)
 				request.session['dialog'] = dialog
 				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})

@@ -4,17 +4,40 @@ body {
   padding: 0 20px;
 }
 
-.container {
+.titre {
+  font-size: 35px;
+  text-align: center;
+  color : #4D7CBB;
+  background-color: #F5F5F5;
+  border: 2px solid #dedede;
+}
+
+.chat_fenetre {
+  height : 600px;
+  overflow: scroll;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.user {
   border: 2px solid #dedede;
   background-color: #85C7F1;
   border-radius: 5px;
-  width: 80%;
+  width: 75%;
   padding: 10px;
   margin: 7px;
   color :#011955;
-  text-align: right;
   align-self: flex-end;
-  justify-content: flex-end;
+  text-align: right;
+  font-size: 18px;
+}
+
+.greg {
+  border-color: #ccc;
+  background-color: #F5F5F5;
+  color: #000000;
+  align-self: flex-start;
+  text-align: start;
 }
 
 .container-form
@@ -25,21 +48,15 @@ body {
   margin: 10px 0;
 }
 
-.darker {
-  border-color: #ccc;
-  background-color: #F5F5F5;
-  color: #000000;
-  text-align: left;
-  justify-content: flex-start;
-}
-
-.container::after {
+/* inutile
+.user::after {
   content: "";
   clear: both;
   display: table;
 }
+*/
 
-.container img {
+.user img {
   float: left;
   max-width: 60px;
   width: 100%;
@@ -47,7 +64,7 @@ body {
   border-radius: 50%;
 }
 
-.container img.right {
+.user img.right {
   float: right;
   margin-left: 20px;
   margin-right:0;

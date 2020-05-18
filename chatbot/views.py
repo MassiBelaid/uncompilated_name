@@ -24,17 +24,18 @@ LIST_OWN = ["possède"]
 
 LIST_QUE_VEUX_TU_SAVOIR = ["Si tu veux savoir autre chose, je t'écoute.", "Si tu as besoin de savoir quelque chose, je t'en prie.", "Si tu as besoin de savoir quelque chose, je t'écoute."]
 LIST_FAIRE_CONNAISSANCE = ["faisons connaissance","apprenons à nous connaitre","apprenons a nous connaitre","apprenons à nous connaître"]
+LIST_QUI_ES_TU = ["qui es-tu","qui es tu","qui est-tu","qui est tu","qu'es-tu","qu'es tu","qui tu es","qui tu est","qu'est ce que tu es","qu'est-ce que tu es","qu'est ce que tu est","qu'est-ce que tu est"]
 
-LIST_OUI_FORT = ["certainement","sûrement","absolument","oui c'est certain","oui c'est sûr","assurément oui"]
+LIST_OUI_FORT = ["certainement oui","sûrement oui","absolument oui","c'est certain oui","oui c'est sûr","assurément oui"]
 LIST_OUI_FAIBLE = ["en majorité oui","globalement oui","probablement oui","oui dans beaucoup de cas","oui mais pas toujours"]
-LIST_SAIS_PAS = ["peut-être","je ne sais pas", "je sais pas","aucune idée","je ne pense pas","je pense pas","je ne suis pas sûr","je ne crois pas","je crois pas"]
+LIST_SAIS_PAS = ["peut-être","je ne sais pas", "je sais pas","aucune idée","je ne suis pas sûr","je ne crois pas","je crois pas"]
 LIST_NON_FORT = ["absolument pas","impossible","pas du tout"]
-LIST_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne crois pas"]
+LIST_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne crois pas","je ne pense pas","je pense pas"]
 
 LIST_REPONSE_OUI_FORT = ["oui certainement","oui sûrement","oui absolument","oui surement","oui","absolument","surement","sûrement","assurément","assurément oui","assurement","assurement oui","bah oui","ben oui"]
 LIST_REPONSE_OUI_FAIBLE = ["oui en majorité","oui globalement","oui probablement","oui dans beaucoup de cas","oui en majorite","eventuellement","parfois","oui parfois","parfois oui"]
-LIST_REPONSE_SAIS_PAS = ["peut-être","peut etre", "peut être","pas toujours","pas forcément","pas forcement","peut-etre","je ne suis pas sur","je ne suis pas sûr","je ne crois pas","je crois pas","je ne pense pas","je pense pas","je sais pas","je ne sais pas"]
-LIST_REPONSE_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne crois pas","plutot pas","peut-etre pas"]
+LIST_REPONSE_SAIS_PAS = ["peut-être","peut etre", "peut être","pas toujours","peut-etre","je ne suis pas sur","je ne suis pas sûr","je ne crois pas","je crois pas","je sais pas","je ne sais pas"]
+LIST_REPONSE_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne crois pas","plutot pas","peut-etre pas","je ne pense pas","je pense pas","pas forcément","pas forcement",]
 LIST_REPONSE_NON_FORT = ["absolument pas","impossible","pas du tout","non","absolument non"]
 
 LIST_EVIDENT = ["parce que c'est évident", "c'est factuel","parce ce que c'est un fait","c'est évident"]
@@ -48,12 +49,15 @@ LIST_PARLE = ["parle","parlez","parlons","parles"]
 LIST_CONJ_ETRE = ["est","sont"]
 LIST_CONJ_APPARTENIR = ["appartient","appartiennent"]
 
-STOP_WORDS = ["un","une","des","la","le","les","ton","ta","tes","sa","ses","son","de","des","le","les","la","à","a",",",";","!",":","?","un","une","qu'un","qu'une",
-"que","appartient","appartiennent","est","sont","peut","avoir","comme","etre","être","moi"]
+STOP_WORDS = ["un","une","des","la","le","les","ton","ta","tes","sa","ses","son","de","des","le","les","la","à","a",",",";","!",":","?","qu","qu'un","qu'une",
+"que","appartient","appartiennent","est","sont","peut","avoir","comme","etre","être","moi","ça","ces"]
 
 RAFFINEMENT = "nul0"
 
 LIST_MOT_A_EVITER = ["ton","ta","tes","sa","ses","son","de","des","le","les","la","à","a",",",";","!",":","?"]
+
+GREG_DEF = "Je suis Greg, un robot qui cherche à comprendre le monde dans lequel vous vivez. Si tu veux me parler mais que tu ne sais pas comment faire,\
+	    	 tu peux regarder dans la page \"Comment ça marche ?\" au dessus du chat. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 
 
 def home(request):
@@ -68,9 +72,9 @@ def home(request):
 			request.session['question'] = None
 			request.session['dialog'] = None
 			dialog = []
-			dialog.insert(0,"Bonjour, je suis Greg. Que veux-tu savoir ?")
+			dialog.insert(0,"Bonjour ! {}".format(GREG_DEF))
 			request.session['dialog'] = dialog
-			return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour, je suis Greg. Que veux-tu savoir ?",'dialog':dialog})
+			return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour ! {}".format(GREG_DEF),'dialog':dialog})
 		else :
 			if(rav[0] == "4"):
 				liste_retour_raffinement = reponse_dialog_raffinement(rav,phrase,request)
@@ -130,9 +134,9 @@ def home(request):
 		request.session['dialog'] = None
 		request.session['question'] = None
 		dialog = []
-		dialog.insert(0,"Bonjour, je suis Greg. Que veux-tu savoir ?")
+		dialog.insert(0,"Bonjour ! {}".format(GREG_DEF))
 		request.session['dialog'] = dialog
-		return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour, je suis Greg. Que veux-tu savoir ?",'dialog':dialog})
+		return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour ! {}".format(GREG_DEF),'dialog':dialog})
 	else :
 		reponse = traitement_phrase(phrase,request)
 		print("_______________reponse : {} ".format(reponse))
@@ -299,11 +303,10 @@ def dialog_raffinement(tab_raffinement):
 	nouvelle_liste_retour.append("4")
 	liste_des_raffinement = tab_raffinement[1]
 	terme_raf_terme = liste_des_raffinement[0]
-	#terme_raf_terme = liste_des_raffinement.pop(0)
 	nouvelle_liste_retour.append(liste_des_raffinement)
 	nouvelle_liste_retour.append(tab_raffinement[2])
 	nouvelle_liste_retour.append(tab_raffinement[3])
-	nouvelle_liste_retour.append("veux tu parler de {} ({})".format(tab_raffinement[2],terme_raf_terme))
+	nouvelle_liste_retour.append("Tu veux parler de {} au sens {} ?".format(tab_raffinement[2],terme_raf_terme))
 	return nouvelle_liste_retour
 
 
@@ -321,8 +324,8 @@ def reponse_dialog_raffinement(tab_raffinement,reponse = "non",request = None) :
 	if(reponse in LIST_REPONSE_OUI_FORT):
 		nouvelle_liste_retour.append([])
 		nouvelle_liste_retour.append(tab_raffinement[2])
-		nouvelle_liste_retour.append("alors {}".format(random.choice(LIST_OUI_FORT)))
-		nouvelle_liste_retour.append("alors {}".format(random.choice(LIST_OUI_FORT)))
+		nouvelle_liste_retour.append("Alors {}".format(random.choice(LIST_OUI_FORT)))
+		nouvelle_liste_retour.append("Alors {}".format(random.choice(LIST_OUI_FORT)))
 		return nouvelle_liste_retour
 	elif(reponse in LIST_REPONSE_NON_FORT):
 		liste_des_raffinement = tab_raffinement[1]
@@ -332,7 +335,7 @@ def reponse_dialog_raffinement(tab_raffinement,reponse = "non",request = None) :
 			nouvelle_liste_retour.append(liste_des_raffinement)
 			nouvelle_liste_retour.append(tab_raffinement[2])
 			nouvelle_liste_retour.append(tab_raffinement[3])
-			nouvelle_liste_retour.append("veux tu parler de {} ({})".format(tab_raffinement[2],liste_des_raffinement[0]))
+			nouvelle_liste_retour.append("Tu veux parler de {} au sens {} ?".format(tab_raffinement[2],liste_des_raffinement[0]))
 			return nouvelle_liste_retour
 		else :
 			nouvelle_liste_retour.append(liste_des_raffinement)
@@ -383,6 +386,8 @@ def separateurSymboleTerme(mot) :
 			mot = mot[0:len(mot)-1]
 		if(mot[0] == "d" and mot[1] == "\'") :
 			mot = mot[2:len(mot)]
+		if(mot[len(mot)-1] == '!') :
+			mot = mot[0:len(mot)-1]
 	return mot
 
 
@@ -811,9 +816,9 @@ def chercherRelationTermeUtilisateur(terme) :
 def faireConnaissance(request) :
 	infoUser = request.session.get("user")
 	if(infoUser is None) :
-		return "poser des questions"
+		return "Je ne suis pas encore capable de m'engager dans une telle discussion. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 	else :
-		return "poser d'autres questions"
+		return "Je ne suis pas encore capable de m'engager dans une telle discussion. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 
 
 
@@ -915,9 +920,27 @@ def pre_traitement_phrase(message):
 
 
 
+def pre_traitement_phrase2(message):
+	message = message.lower()
+	listAvant = message.split()
+	listApres = []
+	for mot in listAvant :
+		mot = separateurSymboleTerme(mot)
+		if(mot not in STOP_WORDS or mot == "est") :
+			listApres.append(mot)
+	return listApres
 
 
 
+def message_sans_symbole(message) :
+	message = message.lower()
+	listMess = message.split()
+	listRetour = []
+	for mot in listMess :
+		mot = separateurSymboleTerme(mot)
+		listRetour.append(mot)
+	print(" ".join(listRetour))
+	return " ".join(listRetour)
 
 
 
@@ -928,9 +951,11 @@ def traitement_phrase(message,request = None):
     print(list)
 
     try :
+	    
 
+	    
 
-	    if(list[0] == "est-ce"):
+	    if(list[0] == "est-ce" or (list[0] == "ce")) :
 	        """ Question du style est-ce qu.......
 	                """
 	        
@@ -961,6 +986,7 @@ def traitement_phrase(message,request = None):
 
 
 	            relation_recherchee = "is_a"
+
 
 
 
@@ -1046,14 +1072,30 @@ def traitement_phrase(message,request = None):
 	        		j += 1
 
 	        	relation_recherchee = "r_own"
+
+
 	        else :
-	        	termeUI1 = list[1]
-	        	j = 3 
-	        	termeUI2 = list[2]
-	        	while(j < len(list)):
-	        		termeUI2 = "{} {}".format(termeUI2,list[j])
-	        		j += 1
-	        	relation_recherchee = "is_a"
+	        	list = pre_traitement_phrase2(message)
+	        	if(list[0] == "est") :
+	        		del list[0]
+	        	if("est" in list):
+	        		i = 2
+	        		termeUI1 = list[1]
+	        		termeUI2 = ""
+	        		indexDetemRel = list.index("est")
+	        		while(i < indexDetemRel) :
+	        			termeUI1 = "{} {}".format(termeUI1,list[i])
+	        			i += 1
+	        		termeUI2 = list[indexDetemRel + 1]
+	        		j = indexDetemRel + 2
+	        		while(j < len(list)) :
+	        			termeUI2 = "{} {}".format(termeUI2,list[j])
+	        			j += 1
+	        		relation_recherchee = "is_a"
+	        	else :
+	        		return "Je ne comprends bien votre question. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
+
+
 	        
 
 
@@ -1091,18 +1133,14 @@ def traitement_phrase(message,request = None):
 
 
 
-	        if (list[1] == "est-ce" ) :
+	        if (list[1] == "est-ce" or list[1] == "ce") :
 	            """ phrase du style est-ce que un/une .........
 	                """
-	            i = 3
-	            termeUI1 = list[2]
-	            termeUI2 = ""
-	        else :
-	            """ phrase du style est-ce que/qu'une/qu'un .....
-	                """
-	            i = 2
-	            termeUI1 = list[1]
-	            termeUI2 = ""
+	            del list[1]
+	        
+	        i = 2
+	        termeUI1 = list[1]
+	        termeUI2 = ""
 	  
 
 	        compris = True
@@ -1226,16 +1264,30 @@ def traitement_phrase(message,request = None):
 
 
 	        else :
-	            """Question non comprise
-	                """
+	        	list = pre_traitement_phrase2(message)
+	        	if(list[1] == "est-ce") :
+	        		del list[1]
 
-	            termeUI1 = list[i-1]
-	            j = i+1
-	            termeUI2 = list[i]
-	            while(j < len(list)):
-	            	termeUI2 = "{} {}".format(termeUI2,list[j])
-	            	j += 1
-	            relation_recherchee = "is_a" 
+	        	if(list[1] == "est" and list[2] == "ce") :
+	        		del list[1]
+	        		del list[1]
+
+	        	if("est" in list) :
+	        		i = 2
+	        		termeUI1 = list[1]
+	        		termeUI2 = ""
+	        		indexDetemRel = list.index("est")
+	        		while(i < indexDetemRel) :
+	        			termeUI1 = "{} {}".format(termeUI1,list[i])
+	        			i += 1
+	        		termeUI2 = list[indexDetemRel + 1]
+	        		j = indexDetemRel + 2
+	        		while(j < len(list)) :
+	        			termeUI2 = "{} {}".format(termeUI2,list[j])
+	        			j += 1
+	        		relation_recherchee = "is_a"
+	        	else :
+	        		return "Je ne comprends bien votre question. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 	        
 
 
@@ -1305,6 +1357,9 @@ def traitement_phrase(message,request = None):
 	    			return "Je ne sais pas ce qu'est {}. {}".format(termeUI,random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 
 
+	    elif(message_sans_symbole(message) in LIST_QUI_ES_TU) :
+	    	return "Je suis Greg, un robot qui cherche à comprendre le monde dans lequel vous vivez. Si tu veux me parler mais que tu ne sais pas comment faire,\
+	    	 tu peux regarder dans la page \"Comment ça marche ?\" au dessus du chat. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 
 
 
@@ -1325,8 +1380,12 @@ def traitement_phrase(message,request = None):
 	    		return "{}. {}".format(random.choice(LIST_BONJOUR).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 
 
+
 	    elif(message in LIST_FAIRE_CONNAISSANCE) :
 	    	return faireConnaissance(request)
+
+
+	    
 
 
 	    else:
@@ -1334,8 +1393,9 @@ def traitement_phrase(message,request = None):
 	            """
 	        return "Je ne comprends pas encore ce que vous essayez de me dire. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 
-    except Exception:
+    except Exception as e:
     	print("TU FAIS NIMPORTE QUOI YA ZEBI")
+    	print(e)
     	return "Je ne comprends pas encore ce que vous essayez de me dire. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 
 

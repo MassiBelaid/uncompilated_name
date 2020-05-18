@@ -11,23 +11,24 @@
 <body>
 
 	<header style="overflow: hidden;">
+		<p class = titre>Robot de gestion de connaissances</p>
 		<p style="float: left;">{{date}}</p>
-		<a style="float: right; " href='help'><p>Comment ça marche ?</p></a>
+		<a style="float: right; font-size: 20px;" href='help'><p>Comment ça marche ?</p></a>
 	</header>
 	
 	<form method="GET" action="">
-		<div style = "overflow: scroll; height: 600px; display: flex; flex-direction: column-reverse; align-items:center;" >
+		<div class = "chat_fenetre" >
 				
 				{% for phr in dialog %}
 					{% if forloop.counter0|divisibleby:2 %}					
-		    			<div class="container darker">
-	  						<img src="{% static 'images/blender.jpg' %}" alt="Avatar" class="left" style="width:100%;">
+		    			<div class="user greg">
+	  						<img src="{% static 'images/blender.jpg' %}" alt="Greg" class="left" style="width:100%;">
 	  						<p>{{ phr }}</p>
 	  						<span class="time-right">{% now "H:i" %}</span>
 						</div>
 					{% else %}
-						<div class="container">
-	  						<img src="{% static 'images/borat.jpg' %}" alt="Avatar" class="right" style="width:100%;">
+						<div class="user">
+	  						<img src="{% static 'images/borat.jpg' %}" alt="User" class="right" style="width:100%;">
 	  						<p>{{ phr }}</p>
 	  						<span class="time-left">{% now "H:i" %}</span>
 						</div>
@@ -40,7 +41,7 @@
 
 		<div class="container-form">
  			<input style ="width: 79%" type="text" name="phrase" id="phrase" required autofocus/>
-			<input style="width: 19%" type="submit" value="Parler">
+			<input style="width: 19%" type="submit" value="Envoyer">
 		</div>
 	</form>
 
@@ -48,7 +49,7 @@
   					background-color: #f1f1f1;
   					padding: 10px">
 		<div style="float: left;">
-			<img src="{% static 'images/logo.png' %}" width="150" height=" 100">
+			<img src="{% static 'images/logo.png' %}" width="120" height=" 100">
 		</div>
 
 		<p style = "float: right;">&copy;UncompilatedName</p>

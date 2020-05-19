@@ -1339,7 +1339,7 @@ def traitement_phrase(message,request = None):
 
 
 
-	    elif (("question" in list) or ("questions" in list) or ("questionne" in list) or ("questionnez" in list)):
+	    elif (("question" in list) or ("questions" in list) or ("questionne" in list) or ("questionnez" in list) or ("parle" in list and len(list)==1)):
 	    	return chercherQuestion()
 
 

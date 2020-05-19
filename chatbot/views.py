@@ -50,7 +50,7 @@ LIST_CONJ_ETRE = ["est","sont"]
 LIST_CONJ_APPARTENIR = ["appartient","appartiennent"]
 
 STOP_WORDS = ["un","une","des","la","le","les","ton","ta","tes","sa","ses","son","de","des","le","les","la","à","a",",",";","!",":","?","qu","qu'un","qu'une",
-"que","appartient","appartiennent","est","sont","peut","avoir","comme","etre","être","moi","ça","ces"]
+"que","appartient","appartiennent","est","sont","peut","avoir","comme","etre","être","moi","ces"]
 
 RAFFINEMENT = "nul0"
 
@@ -61,14 +61,19 @@ GREG_DEF = "Je suis Greg, un robot qui cherche à comprendre le monde dans leque
 
 
 def home(request):
+	#Fonction home qui controle la page principale du bot
 	today = date.today()
 	phrase = request.GET.get('phrase') or ''
+	#session ou une question est enregistré si elle existe
 	rav = request.session.get('question')
+	#session ou tout le dialog est enregistré pour qu'il soit affiché
 	dialog = request.session.get('dialog')
 	if(dialog is None) :
 		dialog = []
 	if (rav is not None) :
+		#Relation enregistrée dans session (cas ou le bot pose une question)
 		if(phrase == '') :
+			#premiére entrée dans la page (pas de message de la part de l'utilisateur)
 			request.session['question'] = None
 			request.session['dialog'] = None
 			dialog = []
@@ -76,14 +81,18 @@ def home(request):
 			request.session['dialog'] = dialog
 			return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour ! {}".format(GREG_DEF),'dialog':dialog})
 		else :
+			#les traitement se font par rapport au contenu de la relation enregistré
 			if(rav[0] == "4"):
+				#Cas de la question posé sur le raffinment
 				liste_retour_raffinement = reponse_dialog_raffinement(rav,phrase,request)
 				if(type(liste_retour_raffinement) == str):
+					#si l'utlisateur ne répons pas à la question mais demande autre chose
 					dialog.insert(0,phrase)
 					dialog.insert(0,liste_retour_raffinement)
 					request.session['dialog'] = dialog
 					return render(request,'chatbot/chatbot.html',{'date':today,'reponse':liste_retour_raffinement,'dialog':dialog})
 				elif(liste_retour_raffinement is not False) :
+					#traitement par rapport à sa réponse
 					if(len(liste_retour_raffinement[1]) == 0):
 						request.session['question'] = None
 						rep = liste_retour_raffinement[3]
@@ -96,15 +105,18 @@ def home(request):
 					return render(request,'chatbot/chatbot.html',{'date':today,'reponse':rep,'dialog':dialog})
 
 			else :
+				#Cas ou c'est une question posé sur une relation
 				reponse = traitement_reponse(rav, phrase,request)
 				request.session['question'] = None
 				if(type(reponse) == str) :
+					#si l'utlisateur ne répons pas à la question mais demande autre chose
 					dialog.insert(0,phrase)
 					dialog.insert(0,reponse)
 					request.session['dialog'] = dialog
 					return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
 				else :
 					if(reponse[0] == "4"):
+						#si l'utlisateur ne répons pas à la question mais demande autre chose possédant des raffinement
 						liste_retour_raffinement = dialog_raffinement(reponse)
 						request.session['dialog'] = dialog
 						print(liste_retour_raffinement[1])
@@ -116,6 +128,7 @@ def home(request):
 							request.session['dialog'] = dialog
 							return render(request,'chatbot/chatbot.html',{'date':today,'reponse':rep,'dialog':dialog})
 						else :
+							#traitement de sa réponse à la question
 							request.session['question'] = liste_retour_raffinement
 							rep = liste_retour_raffinement[4]
 							dialog.insert(0,phrase)
@@ -130,7 +143,9 @@ def home(request):
 						request.session['dialog'] = dialog
 						return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})	
 
+	#Cas ou il n'a pas de relation enregistrée
 	if(phrase == '') :
+		#premiére entrée dans la page (pas de message de la part de l'utilisateur)
 		request.session['dialog'] = None
 		request.session['question'] = None
 		dialog = []
@@ -138,21 +153,26 @@ def home(request):
 		request.session['dialog'] = dialog
 		return render(request,'chatbot/chatbot.html',{'date':today, 'reponse':"Bonjour ! {}".format(GREG_DEF),'dialog':dialog})
 	else :
+		#L'utilisateur entre un message
 		reponse = traitement_phrase(phrase,request)
 		print("_______________reponse : {} ".format(reponse))
 		if(type(reponse) == str) :
+			#cas ou il pose une simple question
 			dialog.insert(0,phrase)
 			dialog.insert(0,reponse)
 			request.session['dialog'] = dialog
 			return render(request,'chatbot/chatbot.html',{'date':today,'reponse':reponse,'dialog':dialog})
 		else :
+			#cas ou le bot lui répond en lui posant une question
 			if(reponse[0] == "4"):
+				#cas ou le bot lui répond en lui posant une question sur le raffinement
 				liste_retour_raffinement = dialog_raffinement(reponse)
 				dialog.insert(0,phrase)
 				dialog.insert(0,liste_retour_raffinement[4])
 				request.session['question'] = reponse
 				return render(request,'chatbot/chatbot.html',{'date':today,'reponse':liste_retour_raffinement[4],'dialog':dialog})
 			else :
+				#cas ou le bot lui répond en lui posant une question sur une relation
 				request.session['question'] = reponse
 				reponse = construireQuestion (reponse)
 				dialog.insert(0,phrase)
@@ -169,6 +189,7 @@ def home(request):
 
 
 def extraire(terme) :
+	#fonction prend un terme, extrait tout les relations important en appelant un autre méthode, insére dans la base de données le tout
 	LIST_ALL = []
 	
 	LIST_ALL1 = extraireJDM(terme,"1")
@@ -202,6 +223,7 @@ def extraire(terme) :
 
 
 def extraireJDM(terme, numRel) :
+	#prend un temre et une relation, extrait de jeux de mot et retourne des liste de termes et de relations
 	LIST_ALL = [[],[],[]]
 	idDuTerme = -1
 	termeURL = terme.replace("é","%E9").replace("è","%E8").replace("ê","%EA").replace("à","%E0").replace("ç","%E7").replace("û","%FB").replace(" ","+")
@@ -299,6 +321,7 @@ def extraireJDM(terme, numRel) :
 
 
 def dialog_raffinement(tab_raffinement):
+	#construction d'une liste de raffinement, retourne une liste contenant une liste de terme avec lequels raffinement possible
 	nouvelle_liste_retour = []
 	nouvelle_liste_retour.append("4")
 	liste_des_raffinement = tab_raffinement[1]
@@ -319,17 +342,19 @@ def dialog_raffinement(tab_raffinement):
 
 
 def reponse_dialog_raffinement(tab_raffinement,reponse = "non",request = None) :
+	#l'utilisateur répond à une question de raffinement
 	nouvelle_liste_retour = []
 	nouvelle_liste_retour.append("4")
 	if(reponse in LIST_REPONSE_OUI_FORT):
+		#si l'utilisateur choisi ce terme
 		nouvelle_liste_retour.append([])
 		nouvelle_liste_retour.append(tab_raffinement[2])
 		nouvelle_liste_retour.append("Alors {}".format(random.choice(LIST_OUI_FORT)))
 		nouvelle_liste_retour.append("Alors {}".format(random.choice(LIST_OUI_FORT)))
 		return nouvelle_liste_retour
 	elif(reponse in LIST_REPONSE_NON_FORT):
+		#il ne parle pas de ce terme
 		liste_des_raffinement = tab_raffinement[1]
-		#terme_raf_terme = liste_des_raffinement[0]
 		terme_raf_terme = liste_des_raffinement.pop(0)
 		if(len(liste_des_raffinement) > 0):
 			nouvelle_liste_retour.append(liste_des_raffinement)
@@ -344,6 +369,7 @@ def reponse_dialog_raffinement(tab_raffinement,reponse = "non",request = None) :
 			nouvelle_liste_retour.append(tab_raffinement[3])
 			return nouvelle_liste_retour
 	else :
+		#il ne répond pas du tout à la question
 		request.session['question'] = None
 		return False
 
@@ -354,29 +380,8 @@ def reponse_dialog_raffinement(tab_raffinement,reponse = "non",request = None) :
 
 
 
-def isADeterminant(det):
-	if(det in LIST_DETERMINANT) :
-		return True
-	else :
-		return False
-
-
-
-
-
-def isAMotAEviter(mot):
-	if(mot in LIST_MOT_A_EVITER) :
-		return True
-	else :
-		return False
-
-
-
-
-
-
-
 def separateurSymboleTerme(mot) :
+	#supprime certain symbole du mot
 	if(len(mot) > 1) :
 		if(mot[len(mot)-1] == '?') :
 			mot = mot[0:len(mot)-1]
@@ -400,6 +405,7 @@ def separateurSymboleTerme(mot) :
 
 
 def existTerme(ter) :
+	#cherche si le terme existe dans la base de données, sinon appel une méthode pour le chercher de Jeux De Mots
     idTerme = -1
     if(Terme.objects.filter(terme = ter, raffinement = RAFFINEMENT, importe = "1").exists()) :
     	termeBDDl = Terme.objects.filter(terme = ter, importe = "1", raffinement = RAFFINEMENT).first()
@@ -419,9 +425,11 @@ def existTerme(ter) :
 
 
 def searchRelation(termeU1,relation_recherchee,termeU2) :
+	#cherche une relation quand une quastion Ect-que est posée
 
 	find = False
 	listRelations = Relation.objects.filter(terme1 = termeU1, relation = relation_recherchee, terme2 = termeU2)
+	#cas relation directe existe, et construction de raffinement si'ils existent, reponse par rapport au poids de celle ci.
 	for rel in listRelations :
 		find = True
 		if (rel.poids < NON_FORT):
@@ -462,6 +470,7 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 		else :
 			return "{}. {}".format(random.choice(LIST_OUI_FORT).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 	if(find == False) :
+		#Relation non trouvée, recherche par inférences
 		listRelations = Relation.objects.filter(terme1= termeU1, relation = relation_recherchee)
 		for rel in listRelations :
 			p1 = rel.poids
@@ -514,6 +523,7 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 				
 			return reponse
 		else :
+			#réponse non trouvée, cherche de la relation avec les sous-classe du premier terme.
 			reponse = "{}. {}".format(random.choice(LIST_SAIS_PAS).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 
 
@@ -574,6 +584,7 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 					liste_des_raf_a_r.append(Terme.objects.get(id = termeU1).terme)
 					liste_des_raf_a_r.append("{}. {}".format(random.choice(LIST_SAIS_PAS).capitalize(),random.choice(LIST_QUE_VEUX_TU_SAVOIR)))
 					return liste_des_raf_a_r
+			#ajout de la relation crée dans dans table RelationAVerifier si elle n'existe pas deja
 			listAverifier = RelationAVerifier.objects.filter(terme1 = termeU1, relation = relation_recherchee, terme2 = termeU2)
 			if(len(listAverifier) == 0) :
 				existeTermBool = Terme.objects.filter(id = termeU1).exists() and Terme.objects.filter(id = termeU2).exists()
@@ -595,6 +606,7 @@ def searchRelation(termeU1,relation_recherchee,termeU2) :
 
 
 def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
+	#recherches de relations avec inférence pour répondre aux pourquoi.
 	find = False
 	listRelations = Relation.objects.filter(terme1= termeU1, relation = relation_recherchee)
 	for rel in listRelations :
@@ -736,7 +748,7 @@ def searchRelationPourquoi(termeU1,relation_recherchee,termeU2) :
 
 
 def verif_raffinement(terme1, r, terme2):
-	print("========================================= JENTREEEEEEEEEEEEEEEEEEEEEEEEEEEEEE dans verif raffinement")
+	#recherche des raffinements pour un terme.
 	result = []
 	terme = Terme.objects.get(id = terme1)
 	listTermesRaffinement = Terme.objects.filter(terme = terme.terme).exclude(raffinement = RAFFINEMENT)
@@ -758,6 +770,7 @@ def verif_raffinement(terme1, r, terme2):
 
 
 def construireQuestion(rav) :
+	#Contruit une question à poser pour l'utilisateur à partire d'une relation
 	if(rav[1] == "is_a") :
 		corpMsg = random.choice(LIST_IS_A)
 	elif(rav[1] == "has_part") :
@@ -780,6 +793,7 @@ def construireQuestion(rav) :
 
 
 def chercherQuestion() :
+	#recherche relation dans relation à verifier, si elle est vide dans relation
 	if(RelationAVerifier.objects.filter().exists()) :
 		rav = RelationAVerifier.objects.order_by('?').first()
 		return [rav.terme1.id, rav.relation, rav.terme2.id, "1"]
@@ -796,6 +810,7 @@ def chercherQuestion() :
 
 
 def chercherRelationTermeUtilisateur(terme) :
+	#recherche relation contenant un terme donné dans relation à verifier, si elle est vide dans relation
 	idTerme = Terme.objects.filter(terme = terme, raffinement = RAFFINEMENT).first().id
 	if(RelationAVerifier.objects.filter(Q(terme1=idTerme) | Q(terme2=idTerme)).exists()) :
 		rav = RelationAVerifier.objects.filter(Q(terme1=idTerme) | Q(terme2=idTerme)).order_by('?').first()
@@ -814,6 +829,7 @@ def chercherRelationTermeUtilisateur(terme) :
 
 
 def faireConnaissance(request) :
+	#Premier pas vers le dialog
 	infoUser = request.session.get("user")
 	if(infoUser is None) :
 		return "Je ne suis pas encore capable de m'engager dans une telle discussion. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
@@ -831,6 +847,7 @@ def faireConnaissance(request) :
 
 
 def traitement_reponse(rav, reponse,request = None) :
+	#traite les réponses d'un utilisateur pour une question sur une relation
 	reponseList = pre_traitement_phrase(reponse)
 	reponse = " ".join(str(elm) for elm in reponseList)
 	if(rav[3] == "1") :
@@ -908,6 +925,7 @@ def traitement_reponse(rav, reponse,request = None) :
 
 
 def pre_traitement_phrase(message):
+	#traite une phrase de l'utilisateur, et la retourne dans un tableau
 	message = message.lower()
 	listAvant = message.split()
 	listApres = []
@@ -921,6 +939,7 @@ def pre_traitement_phrase(message):
 
 
 def pre_traitement_phrase2(message):
+	#traite une phrase de l'utilisateur, et la retourne dans un tableau, en gardant le "est"
 	message = message.lower()
 	listAvant = message.split()
 	listApres = []
@@ -947,6 +966,7 @@ def message_sans_symbole(message) :
 
 
 def traitement_phrase(message,request = None):
+	#Méthode IA des templates
     list = pre_traitement_phrase(message)
     print(list)
 
@@ -1394,7 +1414,6 @@ def traitement_phrase(message,request = None):
 	        return "Je ne comprends pas encore ce que vous essayez de me dire. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 
     except Exception as e:
-    	print("TU FAIS NIMPORTE QUOI YA ZEBI")
     	print(e)
     	return "Je ne comprends pas encore ce que vous essayez de me dire. {}".format(random.choice(LIST_QUE_VEUX_TU_SAVOIR))
 

@@ -1513,3 +1513,14 @@ def extraction(request) :
 def help(request):
 	return render(request,'help/help.html')
 
+
+LIST_TERMES_A_EXTRAIRE_SITE = ["ordinateur", "carte mère", "processeur", "alimentation", "calcul", "port usb", "souris", "écran", "clavier", "internet", "logiciel", "portable", "informatique",
+"virus", "apple", "video","réseau","connexion"]
+
+def extractionSite(request) :
+	for terme_a_ext in LIST_TERMES_A_EXTRAIRE_SITE :
+		nbTermes = 0
+		i = existTerme(terme_a_ext)
+		if(i > -1) :
+			nbTermes +=1
+	return render(request,'chatbot/extraction.html',{'nbTermes': nbTermes})

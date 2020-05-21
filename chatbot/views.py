@@ -34,7 +34,7 @@ LIST_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne crois pas"
 
 LIST_REPONSE_OUI_FORT = ["oui certainement","oui sûrement","oui absolument","oui surement","oui","absolument","surement","sûrement","assurément","assurément oui","assurement","assurement oui","bah oui","ben oui"]
 LIST_REPONSE_OUI_FAIBLE = ["oui en majorité","oui globalement","oui probablement","oui dans beaucoup de cas","oui en majorite","eventuellement","parfois","oui parfois","parfois oui"]
-LIST_REPONSE_SAIS_PAS = ["peut-être","peut etre", "peut être","pas toujours","peut-etre","je ne suis pas sur","je ne suis pas sûr","je ne crois pas","je crois pas","je sais pas","je ne sais pas"]
+LIST_REPONSE_SAIS_PAS = ["peut-être","peut etre", "peut être","pas toujours","peut-etre","je ne suis pas sur","je ne suis pas sûr","je sais pas","je ne sais pas"]
 LIST_REPONSE_NON_FAIBLE = ["plutôt pas","peut-être pas","j'en doute","je ne crois pas","plutot pas","peut-etre pas","je ne pense pas","je pense pas","pas forcément","pas forcement",]
 LIST_REPONSE_NON_FORT = ["absolument pas","impossible","pas du tout","non","absolument non"]
 
@@ -910,6 +910,7 @@ def traitement_reponse(rav, reponse,request = None) :
 		else :
 			return traitement_phrase(reponse,request)
 
+		relationPosee.source = "MDF"
 		relationPosee.save()
 
 		return rep
@@ -957,7 +958,8 @@ def message_sans_symbole(message) :
 	listRetour = []
 	for mot in listMess :
 		mot = separateurSymboleTerme(mot)
-		listRetour.append(mot)
+		if(mot != "?") :
+			listRetour.append(mot)
 	print(" ".join(listRetour))
 	return " ".join(listRetour)
 
@@ -1498,7 +1500,7 @@ LIST_TERMES_A_EXTRAIRE = ["angle","armoire","banc","bureau","cabinet","carreau",
 "aliment","ananas","banane","bifteck","café","carotte","cerise","chocolat","chou","citron","citrouille","clémentine","concombre","coquillage","corbeille","crabe","crevette","endive","farine",
 "fraise","framboise","fromage","fruit","gâteau","haricot","huile","légume","marchand","melon","monnaie","navet","noisette","noix","nourriture","oignon","orange","panier","pâtes","pêche","persil",
 "petit pois","poire","poireau","pomme","pomme de terre","prix","prune","queue","raisin","riz","salade","sucre","thé","tomate","viande","vin","cher","léger","lourd","plein","baleine","bouée","île",
-"jumelles","marin","mer","mouette","navire","pêcheur","plage","poisson","port","sardine","serviette","vague","voile","humain","tête"]
+"jumelles","marin","mer","mouette","navire","pêcheur","plage","poisson","port","sardine","serviette","vague","voile","humain","tête","chanteur","chanteuse","artiste"]
 
 
 
